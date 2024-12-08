@@ -1,4 +1,4 @@
-package main
+package Binance
 
 type APIKEYS struct {
 	KEY    string

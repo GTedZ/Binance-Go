@@ -1,3 +1,3 @@
 @echo off
-go build .
+go build Test/test.go
 cmd /k

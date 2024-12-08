@@ -1,4 +1,4 @@
-package main
+package Binance
 
 type Futures struct {
 	binance       *Binance

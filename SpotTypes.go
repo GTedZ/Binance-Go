@@ -1,4 +1,4 @@
-package main
+package Binance
 
 var SPOT_Constants = struct {
 	URLs                [6]string
@@ -21,6 +21,8 @@ var SPOT_Constants = struct {
 	RateLimitTypes      Spot_RateLimitTypes_ENUM
 	RateLimitIntervals  Spot_RateLimitIntervals_ENUM
 	STPModes            Spot_STPModes_ENUM
+
+	Websocket Spot_Websocket_Constants
 }{
 	URLs:          [6]string{"https://api.binance.com", "https://api-gcp.binance.com", "https://api1.binance.com", "https://api2.binance.com", "https://api3.binance.com", "https://api4.binance.com"},
 	URL_Data_Only: "https://data-api.binance.vision",
@@ -158,6 +160,10 @@ var SPOT_Constants = struct {
 		EXPIRE_MAKER: "EXPIRE_MAKER",
 		EXPIRE_TAKER: "EXPIRE_TAKER",
 		EXPIRE_BOTH:  "EXPIRE_BOTH",
+	},
+	Websocket: Spot_Websocket_Constants{
+		URLs:                      []string{"wss://stream.binance.com:9443", "wss://stream.binance.com:443"},
+		MARKET_DATA_ONLY_ENDPOINT: "wss://data-stream.binance.vision",
 	},
 }
 
@@ -312,6 +318,11 @@ type Spot_STPModes_ENUM struct {
 	EXPIRE_MAKER string
 	EXPIRE_TAKER string
 	EXPIRE_BOTH  string
+}
+
+type Spot_Websocket_Constants struct {
+	URLs                      []string
+	MARKET_DATA_ONLY_ENDPOINT string
 }
 
 //

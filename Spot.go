@@ -1,4 +1,4 @@
-package main
+package Binance
 
 import (
 	origJson "encoding/json"
@@ -12,6 +12,8 @@ type Spot struct {
 	baseURL       string
 
 	API APIKEYS
+
+	Websocket Spot_Websocket
 }
 
 func (spot *Spot) init(binance *Binance) {

@@ -1,3 +1,3 @@
 @echo off
-go run .
+go run ./Test/test.go
 cmd /k

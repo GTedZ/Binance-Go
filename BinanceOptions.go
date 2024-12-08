@@ -1,4 +1,4 @@
-package main
+package Binance
 
 type BinanceOptions struct {
 	printErrors           bool

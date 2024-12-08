@@ -1,4 +1,4 @@
-package main
+package Binance
 
 import (
 	jsoniter "github.com/json-iterator/go"
