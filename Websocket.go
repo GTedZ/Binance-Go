@@ -42,7 +42,7 @@ func CreateSocket(baseURL string, streams []string, isCombined bool) (*Websocket
 
 	fullStreamStr := baseURL + queryStr
 
-	if SHOWQUERIES {
+	if PRINT_HTTP_QUERIES {
 		fmt.Println("Websocket:", fullStreamStr)
 	}
 

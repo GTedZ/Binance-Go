@@ -205,7 +205,7 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 		panic(fmt.Sprintf("Method passed to Unsigned Request function is invalid, received: '%s'\nSupported methods are ('%s', '%s', '%s', '%s', '%s')", method, Constants.Methods.GET, Constants.Methods.POST, Constants.Methods.PUT, Constants.Methods.PATCH, Constants.Methods.DELETE))
 	}
 	if err != nil {
-		if requestClient.options.printErrors {
+		if PRINT_ERRORS {
 			fmt.Println("[VERBOSE] Request error:", err)
 		}
 		Err := Error{
@@ -219,7 +219,7 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 
 	resp, err := readResponseBody(rawResponse)
 	if err != nil {
-		if requestClient.options.printErrors {
+		if PRINT_ERRORS {
 			fmt.Println("[VERBOSE] Error reading response body:", err)
 		}
 		Err := Error{
@@ -230,16 +230,16 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 		return nil, &Err
 	}
 
-	if SHOWRESPONSE {
+	if PRINT_HTTP_RESPONSES {
 		fmt.Printf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body))
-	} else if SHOWQUERIES {
+	} else if PRINT_HTTP_QUERIES {
 		fmt.Printf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery)
 	}
 
 	if resp.StatusCode >= 400 {
 		Err, UnmarshallErr := BinanceError(resp)
 		if UnmarshallErr != nil {
-			if requestClient.options.printErrors {
+			if PRINT_ERRORS {
 				fmt.Println("[VERBOSE] Error processing error response body:", UnmarshallErr)
 			}
 			return nil, UnmarshallErr
