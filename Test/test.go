@@ -13,7 +13,7 @@ func main() {
 		fmt.Println("There was an error opening the socket:", err)
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 2)
 
 	socket.Reconnect()
 
