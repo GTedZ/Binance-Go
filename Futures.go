@@ -10,7 +10,7 @@ type Futures struct {
 func (futures *Futures) init(binance *Binance) {
 	futures.binance = binance
 
-	futures.requestClient.init(&binance.Options, &binance.configs)
+	futures.requestClient.init(&binance.Opts, &binance.configs)
 	futures.requestClient.Set_APIKEY(binance.API.KEY, binance.API.SECRET)
 
 	futures.API.Set(binance.API.KEY, binance.API.SECRET)

@@ -5,9 +5,9 @@ type APIKEYS struct {
 	SECRET string
 }
 
-func (keys *APIKEYS) Set(APIKEY string, APISECRET string) {
-	keys.KEY = APIKEY
-	keys.SECRET = APISECRET
+func (keys *APIKEYS) Set(KEY string, SECRET string) {
+	keys.KEY = KEY
+	keys.SECRET = SECRET
 }
 
 func (keys *APIKEYS) Get() (KEY string, SECRET string) {

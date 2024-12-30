@@ -2,21 +2,21 @@ package Binance
 
 type Binance struct {
 	configs BinanceConfig
-	Options BinanceOptions
+	Opts    BinanceOptions
 
 	API APIKEYS
+
+	BinaryUtils BinaryUtils
 
 	Spot    Spot
 	Futures Futures
 }
 
-func CreateClient(APIKEY string, APISECRET string) Binance {
+func CreateReadClient() Binance {
 	binance := Binance{}
 
 	binance.configs.init()
-
-	binance.Options.init()
-	binance.API.Set(APIKEY, APISECRET)
+	binance.Opts.init()
 
 	binance.Spot.init(&binance)
 	binance.Futures.init(&binance)
@@ -24,10 +24,16 @@ func CreateClient(APIKEY string, APISECRET string) Binance {
 	return binance
 }
 
+func CreateClient(APIKEY string, APISECRET string) Binance {
+	binance := Binance{}
+	binance.API.Set(APIKEY, APISECRET)
+	return binance
+}
+
 func CreateClientWithOptions(APIKEY string, APISECRET string, recvWindow int64) Binance {
 	binance := CreateClient(APIKEY, APISECRET)
 
-	binance.Options.Set_recvWindow(recvWindow)
+	binance.Opts.Set_recvWindow(recvWindow)
 
 	return binance
 }

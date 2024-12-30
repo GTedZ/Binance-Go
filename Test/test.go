@@ -3,19 +3,16 @@ package main
 import (
 	"Binance"
 	"fmt"
-	"time"
 )
 
 func main() {
-	socket, err := Binance.CreateSocket("wss://fstream.binance.com", []string{"btcusdt@kline_1m"}, false)
+	binance := Binance.CreateReadClient()
+	socket, _ := binance.Spot.Websockets.AggTrade(func(aggTrade *Binance.SpotWS_AggTrade) { fmt.Println(aggTrade) }, "BTCUSDT", "ETHUSDT", "XRPUSDT")
 
-	if err != nil {
-		fmt.Println("There was an error opening the socket:", err)
-	}
-
-	time.Sleep(time.Second * 2)
-
-	socket.Reconnect()
+	socket.Unsubscribe("BTCUSDT", "ETHUSDT")
+	socket.Subscribe("XAIUSDT", "REIUSDT", "GOUSDT")
+	socket.Unsubscribe("XAIUSDT", "XRPUSDT")
+	socket.Subscribe("BTCUSDT", "ETHUSDT", "XRPUSDT", "XAIUSDT", "FLOKIUSDT")
 
 	select {}
 }

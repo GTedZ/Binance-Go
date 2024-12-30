@@ -1,9 +1,10 @@
 package Binance
 
 import (
-	origJson "encoding/json"
 	"fmt"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 type Spot struct {
@@ -13,17 +14,19 @@ type Spot struct {
 
 	API APIKEYS
 
-	Websocket Spot_Websocket
+	Websockets Spot_Websockets
 }
 
 func (spot *Spot) init(binance *Binance) {
 	spot.binance = binance
 
-	spot.requestClient.init(&binance.Options, &binance.configs)
+	spot.requestClient.init(&binance.Opts, &binance.configs)
 	spot.requestClient.Set_APIKEY(binance.API.KEY, binance.API.SECRET)
 	spot.baseURL = SPOT_Constants.URLs[0]
 
 	spot.API.Set(binance.API.KEY, binance.API.SECRET)
+
+	spot.Websockets.binance = binance
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +77,7 @@ func (spot *Spot) Time() (*Spot_Time, *Response, *Error) {
 
 	processingErr := json.Unmarshal(httpResp.Body, &spotTime)
 	if processingErr != nil {
-		return &spotTime, httpResp, LocalError(RESPONSE_PROCESSING_ERR, processingErr.Error())
+		return &spotTime, httpResp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
 	return &spotTime, httpResp, nil
@@ -170,12 +173,10 @@ func (spot *Spot) ExchangeInfo() (*Spot_ExchangeInfo, *Response, *Error) {
 		return nil, resp, err
 	}
 
-	fmt.Println(time.Now().UnixMilli())
 	exchangeInfo, err := ParseExchangeInfo(resp)
 	if err != nil {
 		return nil, resp, err
 	}
-	fmt.Println(time.Now().UnixMilli())
 
 	return exchangeInfo, resp, nil
 }
@@ -185,7 +186,7 @@ func ParseExchangeInfo(exchangeInfo_response *Response) (*Spot_ExchangeInfo, *Er
 
 	err := json.Unmarshal(exchangeInfo_response.Body, &exchangeInfo)
 	if err != nil {
-		return nil, LocalError(RESPONSE_PROCESSING_ERR, err.Error())
+		return nil, LocalError(PARSING_ERROR, err.Error())
 	}
 
 	exchangeInfo.Symbols = make(map[string]*Spot_Symbol)
@@ -202,7 +203,7 @@ func (exchangeInfo *Spot_ExchangeInfo) UnmarshalJSON(data []byte) error {
 
 	// Create an anonymous struct embedding the Alias type
 	aux := &struct {
-		Filters []origJson.RawMessage `json:"exchangeFilters"` // Capture filters as raw JSON
+		Filters []jsoniter.RawMessage `json:"exchangeFilters"` // Capture filters as raw JSON
 		*Alias
 	}{
 		Alias: (*Alias)(exchangeInfo), // Casting exchangeInfo to the alias so that unmarshall doesnt recursively call it again when we unmarshal it via this struct's unmarshall
@@ -210,7 +211,7 @@ func (exchangeInfo *Spot_ExchangeInfo) UnmarshalJSON(data []byte) error {
 
 	err := json.Unmarshal(data, &aux)
 	if err != nil {
-		return LocalError(RESPONSE_PROCESSING_ERR, err.Error())
+		return LocalError(PARSING_ERROR, err.Error())
 	}
 
 	for _, filter := range aux.Filters {
@@ -256,7 +257,7 @@ func (symbol *Spot_Symbol) UnmarshalJSON(data []byte) error {
 
 	// Create an anonymous struct embedding the Alias type
 	aux := &struct {
-		Filters []origJson.RawMessage `json:"filters"` // Capture filters as raw JSON
+		Filters []jsoniter.RawMessage `json:"filters"` // Capture filters as raw JSON
 		*Alias
 	}{
 		Alias: (*Alias)(symbol), // Casting symbol to the alias so that unmarshall doesnt recursively call it again when we unmarshal it via this struct's unmarshall
@@ -385,7 +386,7 @@ func (spot *Spot) OrderBook(symbol string, limit ...int64) (*Spot_OrderBook, *Re
 
 	processingErr := json.Unmarshal(resp.Body, orderBook)
 	if processingErr != nil {
-		return nil, resp, LocalError(RESPONSE_PROCESSING_ERR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
 	return orderBook, resp, nil
@@ -422,7 +423,7 @@ func (spot *Spot) RecentTrades(symbol string, limit ...int64) ([]*Spot_Trade, *R
 
 	processingErr := json.Unmarshal(resp.Body, &trades)
 	if processingErr != nil {
-		return nil, resp, LocalError(RESPONSE_PROCESSING_ERR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
 	return trades, resp, nil
@@ -479,7 +480,7 @@ func (spot *Spot) OldTrades(symbol string, opt_params ...*Spot_OldTrades_Params)
 
 	processingErr := json.Unmarshal(resp.Body, &trades)
 	if processingErr != nil {
-		return nil, resp, LocalError(RESPONSE_PROCESSING_ERR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
 	return trades, resp, nil
@@ -550,7 +551,7 @@ func (spot *Spot) AggTrades(symbol string, opt_params ...*Spot_AggTrades_Params)
 
 	processingErr := json.Unmarshal(resp.Body, &aggTrades)
 	if processingErr != nil {
-		return nil, resp, LocalError(RESPONSE_PROCESSING_ERR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
 	return aggTrades, resp, nil
@@ -660,7 +661,7 @@ func (spot *Spot) Candlesticks(symbol string, interval string, opt_params ...*Sp
 	var rawCandlesticks [][]interface{}
 	processingErr := json.Unmarshal(resp.Body, &rawCandlesticks)
 	if processingErr != nil {
-		return nil, resp, LocalError(RESPONSE_PROCESSING_ERR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
 	// Convert the raw data to Spot_Candlestick slice

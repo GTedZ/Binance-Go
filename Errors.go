@@ -27,18 +27,28 @@ func (e *Error) Error() string {
 }
 
 const (
-	HTTP_REQUEST_ERR         = -1
-	RESPONSEBODY_READING_ERR = -2
-	ERROR_PROCESSING_ERR     = -3
-	RESPONSE_PROCESSING_ERR  = -4
+	HTTP_REQUEST_ERR = iota
+	RESPONSEBODY_READING_ERR
+	ERROR_PROCESSING_ERR
+	RESPONSE_HEADER_NOT_FOUND
+	PARSING_ERROR
+	WS_OPEN_ERR
+	WS_SEND_MESSAGE_ERR
+	REQUEST_TIMEOUT_ERR
 )
 
 func LocalError(code int, msg string) *Error {
-	return &Error{
+	err := &Error{
 		IsLocalError: true,
 		Code:         code,
 		Message:      msg,
 	}
+
+	if PRINT_ERRORS {
+		fmt.Println(err.Error())
+	}
+
+	return err
 }
 
 type BinanceErrorResponse struct {
@@ -46,19 +56,28 @@ type BinanceErrorResponse struct {
 	Msg  string `json:"msg"`
 }
 
+// Processes an erroneous 4XX HTTP Response
+// Returns the library Error type
+// In the case of an error parsing the error body, it returns a secondaly unmarshall error
 func BinanceError(resp *Response) (BinanceError *Error, UnmarshallError *Error) {
 	var errResponse BinanceErrorResponse
-	err := json.Unmarshal(resp.Body, &errResponse)
-	if err != nil {
+
+	unmarshallErr := json.Unmarshal(resp.Body, &errResponse)
+	if unmarshallErr != nil {
 		return nil,
-			LocalError(ERROR_PROCESSING_ERR, err.Error())
+			LocalError(ERROR_PROCESSING_ERR, unmarshallErr.Error())
 	}
 
-	return &Error{
-			IsLocalError: false,
-			StatusCode:   resp.StatusCode,
-			Code:         errResponse.Code,
-			Message:      errResponse.Msg,
-		},
-		nil
+	err := &Error{
+		IsLocalError: false,
+		StatusCode:   resp.StatusCode,
+		Code:         errResponse.Code,
+		Message:      errResponse.Msg,
+	}
+
+	if PRINT_ERRORS {
+		fmt.Println(err.Error())
+	}
+
+	return err, nil
 }

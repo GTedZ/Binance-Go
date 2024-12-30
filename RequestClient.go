@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
+	"time"
 )
 
 type RequestClient struct {
@@ -85,6 +87,61 @@ type Response struct {
 	// The pointer is shared between responses and should not be
 	// modified.
 	TLS *tls.ConnectionState
+}
+
+// # Fetches the current used weight returned the request.
+//
+// interval: "1m", "3m", "1d", "1W", "1M", or simply ""
+//
+// But most common and only one used as of writing this is "1m"
+//
+// Returns an error if the header is not found
+func (resp *Response) GetUsedWeight(interval string) (int64, *Error) {
+	key := "X-Mbx-Used-Weight"
+	if interval != "" {
+		key += "-" + interval
+	}
+
+	strValue := resp.Header.Get(key)
+
+	if strValue == "" {
+		errStr := "No Used Weight was found for this interval"
+		if PRINT_ERRORS {
+			fmt.Println(errStr)
+		}
+		return 0, LocalError(RESPONSE_HEADER_NOT_FOUND, "")
+	}
+
+	// Parses the value to int64
+	value, err := strconv.ParseInt(strValue, 10, 64)
+	if err != nil {
+		fmt.Println("Error parsing header value:", err)
+		return 0, LocalError(PARSING_ERROR, err.Error())
+	}
+
+	return value, nil
+}
+
+func (resp *Response) GetRequestTime() (time.Time, *Error) {
+	key := "Date"
+
+	strValue := resp.Header.Get(key)
+
+	if strValue == "" {
+		errStr := "No Date header was found for this request"
+		if PRINT_ERRORS {
+			fmt.Println(errStr)
+		}
+		return time.Now(), LocalError(RESPONSE_HEADER_NOT_FOUND, "")
+	}
+
+	parsedTime, err := time.Parse(time.RFC1123, strValue)
+	if err != nil {
+		fmt.Println("Error parsing date:", err)
+		return time.Now(), LocalError(PARSING_ERROR, "There was an error parsing the date from request headers")
+	}
+
+	return parsedTime, nil
 }
 
 //
