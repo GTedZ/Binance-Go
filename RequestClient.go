@@ -1,7 +1,10 @@
 package Binance
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,10 +15,9 @@ import (
 )
 
 type RequestClient struct {
-	options *BinanceOptions
-	configs *BinanceConfig
+	binance *Binance
 
-	client http.Client
+	client *http.Client
 	api    APIKEYS
 }
 
@@ -146,9 +148,9 @@ func (resp *Response) GetRequestTime() (time.Time, *Error) {
 
 //
 
-func (requestClient *RequestClient) init(options *BinanceOptions, configs *BinanceConfig) {
-	requestClient.options = options
-	requestClient.configs = configs
+func (requestClient *RequestClient) init(binance *Binance) {
+	requestClient.binance = binance
+	requestClient.client = &http.Client{}
 }
 
 func (requestClient *RequestClient) Set_APIKEY(APIKEY string, APISECRET string) {
@@ -265,6 +267,57 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 		if PRINT_ERRORS {
 			fmt.Println("[VERBOSE] Request error:", err)
 		}
+		return nil, LocalError(HTTP_REQUEST_ERR, err.Error())
+	}
+	defer rawResponse.Body.Close()
+
+	resp, err := readResponseBody(rawResponse)
+	if err != nil {
+		if PRINT_ERRORS {
+			fmt.Println("[VERBOSE] Error reading response body:", err)
+		}
+		return nil, LocalError(RESPONSEBODY_READING_ERR, err.Error())
+	}
+
+	if PRINT_HTTP_RESPONSES {
+		fmt.Printf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body))
+	} else if PRINT_HTTP_QUERIES {
+		fmt.Printf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery)
+	}
+
+	if resp.StatusCode >= 400 {
+		Err, UnmarshallErr := BinanceError(resp)
+		if UnmarshallErr != nil {
+			if PRINT_ERRORS {
+				fmt.Println("[VERBOSE] Error processing error response body:", UnmarshallErr)
+			}
+			return nil, UnmarshallErr
+		}
+
+		return resp, Err
+	}
+
+	return resp, nil
+}
+
+func (requestClient *RequestClient) APIKEY_only(method string, baseURL string, URL string, params map[string]interface{}) (*Response, *Error) {
+
+	paramString := createQueryString(params, false)
+
+	fullQuery := baseURL + URL + "?" + paramString
+
+	req, err := http.NewRequest(method, fullQuery, nil)
+	if err != nil {
+		return nil, LocalError(HTTP_REQUEST_ERR, err.Error())
+	}
+
+	req.Header.Set("X-MBX-APIKEY", requestClient.api.KEY)
+
+	rawResponse, err := requestClient.client.Do(req)
+	if err != nil {
+		if PRINT_ERRORS {
+			fmt.Println("[VERBOSE] Request error:", err)
+		}
 		Err := Error{
 			IsLocalError: true,
 			Code:         HTTP_REQUEST_ERR,
@@ -308,12 +361,73 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 	return resp, nil
 }
 
-// func (requestClient *RequestClient) UserStream() (resp *http.Response, err error) {
-// 	requestClient.client.Do()
+func (requestClient *RequestClient) Signed(method string, baseURL string, URL string, params map[string]interface{}) (*Response, *Error) {
 
-// 	return resp, nil
-// }
+	params["timestamp"] = time.Now().UnixMilli() + requestClient.binance.configs.timestamp_offset
 
-// func (requestClient *RequestClient) Signed() (resp *http.Response, err error) {
+	paramString := createQueryString(params, false)
 
-// }
+	h := hmac.New(sha256.New, []byte(requestClient.api.SECRET))
+	_, err := h.Write([]byte(paramString))
+	if err != nil {
+		return nil, LocalError(HTTP_SIGNATURE_ERR, err.Error())
+	}
+
+	signature := hex.EncodeToString(h.Sum(nil))
+
+	fullQuery := baseURL + URL + "?" + paramString + "&signature=" + signature
+
+	req, err := http.NewRequest(method, fullQuery, nil)
+	if err != nil {
+		return nil, LocalError(HTTP_REQUEST_ERR, err.Error())
+	}
+
+	req.Header.Set("X-MBX-APIKEY", requestClient.api.KEY)
+
+	rawResponse, err := requestClient.client.Do(req)
+	if err != nil {
+		if PRINT_ERRORS {
+			fmt.Println("[VERBOSE] Request error:", err)
+		}
+		Err := Error{
+			IsLocalError: true,
+			Code:         HTTP_REQUEST_ERR,
+			Message:      err.Error(),
+		}
+		return nil, &Err
+	}
+	defer rawResponse.Body.Close()
+
+	resp, err := readResponseBody(rawResponse)
+	if err != nil {
+		if PRINT_ERRORS {
+			fmt.Println("[VERBOSE] Error reading response body:", err)
+		}
+		Err := Error{
+			IsLocalError: true,
+			Code:         RESPONSEBODY_READING_ERR,
+			Message:      err.Error(),
+		}
+		return nil, &Err
+	}
+
+	if PRINT_HTTP_RESPONSES {
+		fmt.Printf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body))
+	} else if PRINT_HTTP_QUERIES {
+		fmt.Printf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery)
+	}
+
+	if resp.StatusCode >= 400 {
+		Err, UnmarshallErr := BinanceError(resp)
+		if UnmarshallErr != nil {
+			if PRINT_ERRORS {
+				fmt.Println("[VERBOSE] Error processing error response body:", UnmarshallErr)
+			}
+			return nil, UnmarshallErr
+		}
+
+		return resp, Err
+	}
+
+	return resp, nil
+}

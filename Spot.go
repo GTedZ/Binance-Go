@@ -20,7 +20,7 @@ type Spot struct {
 func (spot *Spot) init(binance *Binance) {
 	spot.binance = binance
 
-	spot.requestClient.init(&binance.Opts, &binance.configs)
+	spot.requestClient.init(binance)
 	spot.requestClient.Set_APIKEY(binance.API.KEY, binance.API.SECRET)
 	spot.baseURL = SPOT_Constants.URLs[0]
 
@@ -51,7 +51,7 @@ func (spot *Spot) Ping() (latency int64, request *Response, err *Error) {
 	return diff, httpResp, nil
 }
 
-////////
+/////////////////////////////////////////////////////////////////////////////////
 
 // # Check server time
 //
@@ -83,14 +83,17 @@ func (spot *Spot) Time() (*Spot_Time, *Response, *Error) {
 	return &spotTime, httpResp, nil
 }
 
-// ////// ExchangeInfo \\
+/////////////////////////////////////////////////////////////////////////////////
+
+//////// ExchangeInfo \\
+
 type Spot_ExchangeInfo_Params struct {
 	Symbol       string
 	Symbols      []string
 	Permissions  []string
 	SymbolStatus string
 	// The logic is flipped with "Dont Show" here
-	// Because bools are always initialize as "false" while the exchange default is "true"
+	// Because bools are always initialized as "false" while the exchange default is "true"
 	DontShowPermissionSets bool
 }
 
@@ -149,7 +152,7 @@ func (spot *Spot) ExchangeInfo_Params(params *Spot_ExchangeInfo_Params) (*Spot_E
 		return nil, resp, err
 	}
 
-	exchangeInfo, err := ParseExchangeInfo(resp)
+	exchangeInfo, err := ParseSpotExchangeInfo(resp)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -173,7 +176,7 @@ func (spot *Spot) ExchangeInfo() (*Spot_ExchangeInfo, *Response, *Error) {
 		return nil, resp, err
 	}
 
-	exchangeInfo, err := ParseExchangeInfo(resp)
+	exchangeInfo, err := ParseSpotExchangeInfo(resp)
 	if err != nil {
 		return nil, resp, err
 	}
@@ -181,7 +184,7 @@ func (spot *Spot) ExchangeInfo() (*Spot_ExchangeInfo, *Response, *Error) {
 	return exchangeInfo, resp, nil
 }
 
-func ParseExchangeInfo(exchangeInfo_response *Response) (*Spot_ExchangeInfo, *Error) {
+func ParseSpotExchangeInfo(exchangeInfo_response *Response) (*Spot_ExchangeInfo, *Error) {
 	var exchangeInfo Spot_ExchangeInfo
 
 	err := json.Unmarshal(exchangeInfo_response.Body, &exchangeInfo)
@@ -224,15 +227,15 @@ func (exchangeInfo *Spot_ExchangeInfo) UnmarshalJSON(data []byte) error {
 		}
 
 		switch tempObj["filterType"] {
-		case SPOT_Constants.SymbolFilterTypes.PRICE_FILTER:
+		case SPOT_Constants.ExchangeFilterTypes.EXCHANGE_MAX_NUM_ORDERS:
 			exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ORDERS = &Spot_ExchangeFilter_EXCHANGE_MAX_NUM_ORDERS{}
 			err = json.Unmarshal(filter, &exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ORDERS)
 
-		case SPOT_Constants.SymbolFilterTypes.PERCENT_PRICE:
+		case SPOT_Constants.ExchangeFilterTypes.EXCHANGE_MAX_NUM_ALGO_ORDERS:
 			exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ALGO_ORDERS = &Spot_ExchangeFilter_EXCHANGE_MAX_NUM_ALGO_ORDERS{}
 			err = json.Unmarshal(filter, &exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ALGO_ORDERS)
 
-		case SPOT_Constants.SymbolFilterTypes.PERCENT_PRICE_BY_SIDE:
+		case SPOT_Constants.ExchangeFilterTypes.EXCHANGE_MAX_NUM_ICEBERG_ORDERS:
 			exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ICEBERG_ORDERS = &Spot_ExchangeFilter_EXCHANGE_MAX_NUM_ICEBERG_ORDERS{}
 			err = json.Unmarshal(filter, &exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ICEBERG_ORDERS)
 		default:
@@ -280,7 +283,7 @@ func (symbol *Spot_Symbol) UnmarshalJSON(data []byte) error {
 		switch tempObj["filterType"] {
 		case SPOT_Constants.SymbolFilterTypes.PRICE_FILTER:
 			symbol.Filters.PRICE_FILTER = &Spot_SymbolFilter_PRICE_FILTER{}
-			err = json.Unmarshal(filter, symbol.Filters.PRICE_FILTER)
+			err = json.Unmarshal(filter, &symbol.Filters.PRICE_FILTER)
 
 		case SPOT_Constants.SymbolFilterTypes.PERCENT_PRICE:
 			symbol.Filters.PERCENT_PRICE = &Spot_SymbolFilter_PERCENT_PRICE{}
@@ -346,6 +349,7 @@ func (symbol *Spot_Symbol) UnmarshalJSON(data []byte) error {
 }
 
 //////// ExchangeInfo //
+/////////////////////////////////////////////////////////////////////////////////
 
 // # Order Book
 //
@@ -384,7 +388,7 @@ func (spot *Spot) OrderBook(symbol string, limit ...int64) (*Spot_OrderBook, *Re
 
 	var orderBook *Spot_OrderBook
 
-	processingErr := json.Unmarshal(resp.Body, orderBook)
+	processingErr := json.Unmarshal(resp.Body, &orderBook)
 	if processingErr != nil {
 		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
@@ -392,7 +396,7 @@ func (spot *Spot) OrderBook(symbol string, limit ...int64) (*Spot_OrderBook, *Re
 	return orderBook, resp, nil
 }
 
-////////
+/////////////////////////////////////////////////////////////////////////////////
 
 // # Recent trades list
 //
@@ -429,7 +433,7 @@ func (spot *Spot) RecentTrades(symbol string, limit ...int64) ([]*Spot_Trade, *R
 	return trades, resp, nil
 }
 
-////////
+/////////////////////////////////////////////////////////////////////////////////
 
 type Spot_OldTrades_Params struct {
 	// Default 500; max 1000.
@@ -486,7 +490,7 @@ func (spot *Spot) OldTrades(symbol string, opt_params ...*Spot_OldTrades_Params)
 	return trades, resp, nil
 }
 
-////////
+/////////////////////////////////////////////////////////////////////////////////
 
 type Spot_AggTrades_Params struct {
 	// Default 500; max 1000.
@@ -557,7 +561,7 @@ func (spot *Spot) AggTrades(symbol string, opt_params ...*Spot_AggTrades_Params)
 	return aggTrades, resp, nil
 }
 
-////////
+/////////////////////////////////////////////////////////////////////////////////
 
 type Spot_Candlesticks_Params struct {
 	// Default: 0 (UTC)
@@ -565,19 +569,6 @@ type Spot_Candlesticks_Params struct {
 	StartTime int64
 	EndTime   int64
 	// Default 500; max 1000.
-	// # Interval	interval value
-	//
-	// seconds:	"1s"
-	//
-	// minutes:	"1m", "3m", "5m", "15m", "30m"
-	//
-	// hours:	"1h", "2h", "4h", "6h", "8h", "12h"
-	//
-	// days:	"1d", "3d"
-	//
-	// weeks:	"1w"
-	//
-	// months:	"1M"
 	Limit int64
 }
 
@@ -688,6 +679,381 @@ func (spot *Spot) Candlesticks(symbol string, interval string, opt_params ...*Sp
 
 /////////////////////////////////////////////////////////////////////////////////
 
+func (spot *Spot) UIKlines(symbol string, interval string, opt_params ...*Spot_Candlesticks_Params) ([]*Spot_Candlestick, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["interval"] = interval
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if params.Limit != 0 {
+			opts["limit"] = params.Limit
+		}
+		if params.TimeZone != "" {
+			opts["timeZone"] = params.TimeZone
+		}
+		if params.StartTime != 0 {
+			opts["startTime"] = params.StartTime
+		}
+		if params.EndTime != 0 {
+			opts["endTime"] = params.EndTime
+		}
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/uiKlines",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	// Unmarshal the data
+	var rawCandlesticks [][]interface{}
+	processingErr := json.Unmarshal(resp.Body, &rawCandlesticks)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+
+	// Convert the raw data to Spot_Candlestick slice
+	candlesticks := make([]*Spot_Candlestick, len(rawCandlesticks))
+	for i, raw := range rawCandlesticks {
+		candlesticks[i] = &Spot_Candlestick{
+			OpenTime:                 int64(raw[0].(float64)),
+			OpenPrice:                raw[1].(string),
+			HighPrice:                raw[2].(string),
+			LowPrice:                 raw[3].(string),
+			ClosePrice:               raw[4].(string),
+			Volume:                   raw[5].(string),
+			CloseTime:                int64(raw[6].(float64)),
+			QuoteAssetVolume:         raw[7].(string),
+			TradeCount:               int64(raw[8].(float64)),
+			TakerBuyBaseAssetVolume:  raw[9].(string),
+			TakerBuyQuoteAssetVolume: raw[10].(string),
+			Unused:                   raw[11].(string),
+		}
+	}
+
+	return candlesticks, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) AveragePrice(symbol string) (*Spot_AveragePrice, *Response, *Error) {
+	opts := make(map[string]interface{})
+	opts["symbol"] = symbol
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/avgPrice",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	// Unmarshal the data
+	var avgPrice Spot_AveragePrice
+	processingErr := json.Unmarshal(resp.Body, &avgPrice)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+
+	return &avgPrice, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) Ticker_RollingWindow24h(symbol ...string) ([]*Spot_Ticker_RollingWindow24h, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbols"] = symbol
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker/24hr",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var tickers []*Spot_Ticker_RollingWindow24h
+	processingErr := json.Unmarshal(resp.Body, &tickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return tickers, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) MiniTicker_RollingWindow24h(symbol ...string) ([]*Spot_MiniTicker_RollingWindow24h, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["type"] = "MINI"
+
+	if len(symbol) != 0 {
+		opts["symbols"] = symbol
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker/24hr",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var miniTickers []*Spot_MiniTicker_RollingWindow24h
+	processingErr := json.Unmarshal(resp.Body, &miniTickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return miniTickers, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+type Spot_Ticker_RollingWindow_Params struct {
+	Symbols    []string
+	WindowSize string
+}
+
+func (spot *Spot) Ticker_RollingWindow(opt_params *Spot_Ticker_RollingWindow_Params) ([]*Spot_Ticker_RollingWindow, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["windowSize"] = opt_params.WindowSize
+	if len(opt_params.Symbols) != 0 {
+		opts["symbols"] = opt_params.Symbols
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var tickers []*Spot_Ticker_RollingWindow
+	processingErr := json.Unmarshal(resp.Body, &tickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return tickers, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) MiniTicker_RollingWindow(opt_params *Spot_Ticker_RollingWindow_Params) ([]*Spot_MiniTicker_RollingWindow, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["windowSize"] = opt_params.WindowSize
+	opts["type"] = "MINI"
+	if len(opt_params.Symbols) != 0 {
+		opts["symbols"] = opt_params.Symbols
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var miniTickers []*Spot_MiniTicker_RollingWindow
+	processingErr := json.Unmarshal(resp.Body, &miniTickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return miniTickers, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+type Spot_Ticker_Params struct {
+	Symbols  []string
+	Timezone string
+}
+
+func (spot *Spot) Ticker(opt_params *Spot_Ticker_Params) ([]*Spot_Ticker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(opt_params.Symbols) != 0 {
+		opts["symbols"] = opt_params.Symbols
+	}
+	if opt_params.Timezone != "" {
+		opts["timezone"] = opt_params.Timezone
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker/tradingDay",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var tickers []*Spot_Ticker
+	processingErr := json.Unmarshal(resp.Body, &tickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return tickers, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) MiniTicker(opt_params *Spot_Ticker_Params) ([]*Spot_MiniTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["type"] = "MINI"
+	if len(opt_params.Symbols) != 0 {
+		opts["symbols"] = opt_params.Symbols
+	}
+	if opt_params.Timezone != "" {
+		opts["timezone"] = opt_params.Timezone
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker/tradingDay",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var miniTickers []*Spot_MiniTicker
+	processingErr := json.Unmarshal(resp.Body, &miniTickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return miniTickers, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) PriceTicker(symbol ...string) ([]*Spot_PriceTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbols"] = symbol
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker/price",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var priceTickers []*Spot_PriceTicker
+	processingErr := json.Unmarshal(resp.Body, &priceTickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return priceTickers, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (spot *Spot) BookTicker(symbol ...string) ([]*Spot_BookTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbols"] = symbol
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/ticker/bookTicker",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var bookTickers []*Spot_BookTicker
+	processingErr := json.Unmarshal(resp.Body, &bookTickers)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return bookTickers, resp, nil
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+type Spot_AccountInfo_Params struct {
+	OmitZeroBalances bool
+	RecvWindow       int64
+}
+
+func (spot *Spot) AccountInfo(opt_params ...Spot_AccountInfo_Params) (*Spot_AccountInfo, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		opts["omitZeroBalances"] = params.OmitZeroBalances
+		if params.RecvWindow != 0 {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	resp, err := spot.makeSpotRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.USER_DATA,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/account",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var accountInfo *Spot_AccountInfo
+	processingErr := json.Unmarshal(resp.Body, &accountInfo)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return accountInfo, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
 type SpotRequest struct {
 	method       string
 	url          string
@@ -700,6 +1066,13 @@ func (spot *Spot) makeSpotRequest(request *SpotRequest) (*Response, *Error) {
 	switch request.securityType {
 	case SPOT_Constants.SecurityTypes.NONE:
 		return spot.requestClient.Unsigned(request.method, SPOT_Constants.URL_Data_Only, request.url, request.params)
+	case SPOT_Constants.SecurityTypes.USER_STREAM:
+		return spot.requestClient.APIKEY_only(request.method, spot.baseURL, request.url, request.params)
+
+	case SPOT_Constants.SecurityTypes.TRADE:
+		return spot.requestClient.Signed(request.method, spot.baseURL, request.url, request.params)
+	case SPOT_Constants.SecurityTypes.USER_DATA:
+		return spot.requestClient.Signed(request.method, spot.baseURL, request.url, request.params)
 
 	default:
 		panic(fmt.Sprintf("Security Type passed to Request function is invalid, received: '%s'\nSupported methods are ('%s', '%s', '%s', '%s')", request.securityType, SPOT_Constants.SecurityTypes.NONE, SPOT_Constants.SecurityTypes.USER_STREAM, SPOT_Constants.SecurityTypes.TRADE, SPOT_Constants.SecurityTypes.USER_DATA))

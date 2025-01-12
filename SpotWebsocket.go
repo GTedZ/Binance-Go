@@ -182,7 +182,7 @@ func (socket *SpotWS_Trade_Socket) Unsubscribe(symbol ...string) (resp *SpotWS_U
 	return socket.Handler.Unsubscribe(symbol...)
 }
 
-func (spot_ws *Spot_Websockets) Trade(publicOnMessage func(aggTrade *SpotWS_Trade), symbol ...string) (*SpotWS_Trade_Socket, *Error) {
+func (spot_ws *Spot_Websockets) Trade(publicOnMessage func(trade *SpotWS_Trade), symbol ...string) (*SpotWS_Trade_Socket, *Error) {
 	var newSocket SpotWS_Trade_Socket
 	for i := range symbol {
 		symbol[i] = newSocket.CreateStreamName(symbol[i])
@@ -823,6 +823,399 @@ func (spot_ws *Spot_Websockets) AllRollingWindowStatistics(publicOnMessage func(
 
 	newSocket.Handler = socket
 	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type SpotWS_BookTicker struct {
+
+	// order book updateId
+	UpdateId int64 `json:"u"`
+
+	// symbol
+	Symbol string `json:"s"`
+
+	// best bid price
+	Bid string `json:"b"`
+
+	// best bid qty
+	BidQty string `json:"B"`
+
+	// best ask price
+	Ask string `json:"a"`
+
+	// best ask qty
+	AskQty string `json:"A"`
+}
+
+type SpotWS_BookTicker_Socket struct {
+	Handler *Spot_Websocket
+}
+
+func (*SpotWS_BookTicker_Socket) CreateStreamName(symbol string) string {
+	return strings.ToLower(symbol) + "@bookTicker"
+}
+
+func (socket *SpotWS_BookTicker_Socket) Subscribe(symbol ...string) (resp *SpotWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	for i := range symbol {
+		symbol[i] = socket.CreateStreamName(symbol[i])
+	}
+
+	return socket.Handler.Subscribe(symbol...)
+}
+func (socket *SpotWS_BookTicker_Socket) Unsubscribe(symbol ...string) (resp *SpotWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	for i := range symbol {
+		symbol[i] = socket.CreateStreamName(symbol[i])
+	}
+
+	return socket.Handler.Unsubscribe(symbol...)
+}
+
+func (spot_ws *Spot_Websockets) BookTicker(publicOnMessage func(bookTicker *SpotWS_BookTicker), symbol ...string) (*SpotWS_BookTicker_Socket, *Error) {
+	var newSocket SpotWS_BookTicker_Socket
+
+	for i := range symbol {
+		symbol[i] = newSocket.CreateStreamName(symbol[i])
+	}
+
+	socket, err := spot_ws.CreateSocket(symbol, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var bookTicker *SpotWS_BookTicker
+		err := json.Unmarshal(msg, &bookTicker)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(bookTicker)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type SpotWS_AveragePrice struct {
+
+	// Event type
+	Event string `json:"e"`
+
+	// Event time
+	EventTime int64 `json:"E"`
+
+	// Symbol
+	Symbol string `json:"s"`
+
+	// Average price interval
+	Interval string `json:"i"`
+
+	// Average price
+	AveragePrice string `json:"w"`
+
+	// Last trade time
+	Timestamp int64 `json:"T"`
+}
+
+type SpotWS_AveragePrice_Socket struct {
+	Handler *Spot_Websocket
+}
+
+func (*SpotWS_AveragePrice_Socket) CreateStreamName(symbol string) string {
+	return strings.ToLower(symbol) + "@avgPrice"
+}
+
+func (socket *SpotWS_AveragePrice_Socket) Subscribe(symbol ...string) (resp *SpotWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	for i := range symbol {
+		symbol[i] = socket.CreateStreamName(symbol[i])
+	}
+
+	return socket.Handler.Subscribe(symbol...)
+}
+func (socket *SpotWS_AveragePrice_Socket) Unsubscribe(symbol ...string) (resp *SpotWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	for i := range symbol {
+		symbol[i] = socket.CreateStreamName(symbol[i])
+	}
+
+	return socket.Handler.Unsubscribe(symbol...)
+}
+
+func (spot_ws *Spot_Websockets) AveragePrice(publicOnMessage func(averagePrice *SpotWS_AveragePrice), symbol ...string) (*SpotWS_AveragePrice_Socket, *Error) {
+	var newSocket SpotWS_AveragePrice_Socket
+
+	for i := range symbol {
+		symbol[i] = newSocket.CreateStreamName(symbol[i])
+	}
+
+	socket, err := spot_ws.CreateSocket(symbol, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var averagePrice *SpotWS_AveragePrice
+		err := json.Unmarshal(msg, &averagePrice)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(averagePrice)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	{
+//		"LastUpdateId": 160,  // Last update ID
+//		"Bids": [             // Bids to be updated
+//		  [
+//			"0.0024",         // Price level to be updated
+//			"10"              // Quantity
+//		  ]
+//		],
+//		"Asks": [             // Asks to be updated
+//		  [
+//			"0.0026",         // Price level to be updated
+//			"100"             // Quantity
+//		  ]
+//		]
+//	}
+type SpotWS_PartialBookDepth struct {
+
+	// Last update ID
+	LastUpdateId int64 `json:"lastUpdateId"`
+
+	// Bids to be updated
+	// [
+	//   [
+	// 	"0.0024",         // Price level to be updated
+	// 	"10"              // Quantity
+	//   ]
+	// ],
+	// ...
+	Bids [][2]string `json:"bids"`
+
+	// Asks to be updated
+	// [
+	//   [
+	// 	"0.0026",    // Price level to be updated
+	// 	"100"        // Quantity
+	//   ],
+	//   ...
+	// ]
+	Asks [][2]string `json:"asks"`
+}
+
+type SpotWS_PartialBookDepth_StreamIdentifier struct {
+	Symbol string
+
+	// Accepted values: 5, 10 or 20
+	Levels int
+
+	// # Stream Push Interval
+	//
+	// false -> 1000ms updates
+	//
+	// true  -> 100ms updates
+	IsFast bool
+}
+
+type SpotWS_PartialBookDepth_Socket struct {
+	Handler *Spot_Websocket
+}
+
+func (*SpotWS_PartialBookDepth_Socket) CreateStreamName(symbol string, levels int, isFast bool) string {
+	streamName := strings.ToLower(symbol) + "@depth" + string(levels)
+	if isFast {
+		streamName += "@100ms"
+	}
+	return streamName
+}
+
+func (socket *SpotWS_PartialBookDepth_Socket) Subscribe(identifiers ...SpotWS_PartialBookDepth_StreamIdentifier) (resp *SpotWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(identifiers))
+	for i, id := range identifiers {
+		streams[i] = socket.CreateStreamName(id.Symbol, id.Levels, id.IsFast)
+	}
+
+	return socket.Handler.Subscribe(streams...)
+}
+func (socket *SpotWS_PartialBookDepth_Socket) Unsubscribe(identifiers ...SpotWS_PartialBookDepth_StreamIdentifier) (resp *SpotWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(identifiers))
+	for i, id := range identifiers {
+		streams[i] = socket.CreateStreamName(id.Symbol, id.Levels, id.IsFast)
+	}
+
+	return socket.Handler.Unsubscribe(streams...)
+}
+
+func (spot_ws *Spot_Websockets) PartialBookDepth(publicOnMessage func(partialBookDepth *SpotWS_PartialBookDepth), identifiers ...SpotWS_PartialBookDepth_StreamIdentifier) (*SpotWS_PartialBookDepth_Socket, *Error) {
+	var newSocket SpotWS_PartialBookDepth_Socket
+
+	streams := make([]string, len(identifiers))
+	for i, id := range identifiers {
+		streams[i] = newSocket.CreateStreamName(id.Symbol, id.Levels, id.IsFast)
+	}
+
+	socket, err := spot_ws.CreateSocket(streams, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var partialBookDepth *SpotWS_PartialBookDepth
+		err := json.Unmarshal(msg, &partialBookDepth)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(partialBookDepth)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	{
+//		"Event": "depthUpdate", // Event type
+//		"EventTime": 1672515782136, // Event time
+//		"Symbol": "BNBBTC",      // Symbol
+//		"FirstUpdateId": 157,           // First update ID in event
+//		"FinalUpdateId": 160,           // Final update ID in event
+//		"Bids": [
+//		  [
+//			"0.0024",       // Price level to be updated
+//			"10"            // Quantity
+//		  ]
+//		],
+//		"Asks": [
+//		  [
+//			"0.0026",       // Price level to be updated
+//			"100"           // Quantity
+//		  ]
+//		]
+//	  }
+type SpotWS_DiffBookDepth struct {
+
+	// Event type
+	Event string `json:"e"`
+
+	// Event time
+	EventTime int64 `json:"E"`
+
+	// Symbol
+	Symbol string `json:"s"`
+
+	// First update ID in event
+	FirstUpdateId int64 `json:"U"`
+
+	// Final update ID in event
+	FinalUpdateId int64 `json:"u"`
+
+	// Bids to be updated
+	Bids [][2]string `json:"b"`
+
+	// Asks to be updated
+	Asks [][2]string `json:"a"`
+}
+
+type SpotWS_DiffBookDepth_StreamIdentifier struct {
+	Symbol string
+
+	// # Stream Push Interval
+	//
+	// false -> 1000ms updates
+	//
+	// true  -> 100ms updates
+	IsFast bool
+}
+
+type SpotWS_DiffBookDepth_Socket struct {
+	Handler *Spot_Websocket
+}
+
+func (*SpotWS_DiffBookDepth_Socket) CreateStreamName(symbol string, isFast bool) string {
+	streamName := strings.ToLower(symbol) + "@depth"
+	if isFast {
+		streamName += "@100ms"
+	}
+	return streamName
+}
+
+func (socket *SpotWS_DiffBookDepth_Socket) Subscribe(identifiers ...SpotWS_DiffBookDepth_StreamIdentifier) (resp *SpotWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(identifiers))
+	for i, id := range identifiers {
+		streams[i] = socket.CreateStreamName(id.Symbol, id.IsFast)
+	}
+
+	return socket.Handler.Subscribe(streams...)
+}
+func (socket *SpotWS_DiffBookDepth_Socket) Unsubscribe(identifiers ...SpotWS_DiffBookDepth_StreamIdentifier) (resp *SpotWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(identifiers))
+	for i, id := range identifiers {
+		streams[i] = socket.CreateStreamName(id.Symbol, id.IsFast)
+	}
+
+	return socket.Handler.Unsubscribe(streams...)
+}
+
+func (spot_ws *Spot_Websockets) DiffBookDepth(publicOnMessage func(diffBookDepth *SpotWS_DiffBookDepth), identifiers ...SpotWS_DiffBookDepth_StreamIdentifier) (*SpotWS_DiffBookDepth_Socket, *Error) {
+	var newSocket SpotWS_DiffBookDepth_Socket
+
+	streams := make([]string, len(identifiers))
+	for i, id := range identifiers {
+		streams[i] = newSocket.CreateStreamName(id.Symbol, id.IsFast)
+	}
+
+	socket, err := spot_ws.CreateSocket(streams, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var diffBookDepth *SpotWS_DiffBookDepth
+		err := json.Unmarshal(msg, &diffBookDepth)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(diffBookDepth)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type ManagedOrderBook_Handler struct {
+	Socket    *SpotWS_DiffBookDepth_Socket
+	OrderBook *Spot_OrderBook
+
+	isBuffering bool
+	buffer      []*SpotWS_DiffBookDepth
+}
+
+// # This is a library implementation of a managed order book
+//
+// # IMPORTANT: The returned value is a pointer to an order book struct, DO NOT alter any internal property
+//
+// # Initial request weight usage: 250
+func (ws_spot *Spot_Websockets) ManagedOrderBook(OnMessage func(), Symbol string, IsFast bool) *Error {
+	// var handler ManagedOrderBook_Handler
+
+	// Asks: lowest to highest
+	// Bids: highest to lowest
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////

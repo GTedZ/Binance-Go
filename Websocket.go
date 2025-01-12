@@ -55,16 +55,11 @@ func CreateSocket(baseURL string, streams []string, isCombined bool) (*Websocket
 		isCombined = true
 	}
 
-	fmt.Println(streams)
 	queryStr := CreateQueryStringWS(streams, isCombined)
 
 	fullStreamStr := baseURL + queryStr
 
-	if PRINT_HTTP_QUERIES {
-		fmt.Println("Websocket:", fullStreamStr)
-	}
-
-	fmt.Println("full stream str:", fullStreamStr)
+	LOG_WS_VERBOSE_FULL("Connecting Websocket to:", fullStreamStr)
 
 	conn, _, err := ws.DefaultDialer.Dial(fullStreamStr, nil)
 	if err != nil {

@@ -21,6 +21,7 @@ var SPOT_Constants = struct {
 	RateLimitTypes      Spot_RateLimitTypes_ENUM
 	RateLimitIntervals  Spot_RateLimitIntervals_ENUM
 	STPModes            Spot_STPModes_ENUM
+	ChartIntervals      Spot_ChartIntervals_ENUM
 
 	Websocket Spot_Websocket_Constants
 }{
@@ -160,6 +161,24 @@ var SPOT_Constants = struct {
 		EXPIRE_MAKER: "EXPIRE_MAKER",
 		EXPIRE_TAKER: "EXPIRE_TAKER",
 		EXPIRE_BOTH:  "EXPIRE_BOTH",
+	},
+	ChartIntervals: Spot_ChartIntervals_ENUM{
+		SECOND:   "1s",
+		MIN:      "1m",
+		MINS_3:   "3m",
+		MINS_5:   "5m",
+		MINS_15:  "15m",
+		MINS_30:  "30m",
+		HOUR:     "1h",
+		HOURS_2:  "2h",
+		HOURS_4:  "4h",
+		HOURS_6:  "6h",
+		HOURS_8:  "8h",
+		HOURS_12: "12h",
+		DAY:      "1d",
+		DAYS_3:   "3d",
+		WEEK:     "1w",
+		MONTH:    "1M",
 	},
 	Websocket: Spot_Websocket_Constants{
 		URLs:                      []string{"wss://stream.binance.com:9443", "wss://stream.binance.com:443"},
@@ -320,12 +339,33 @@ type Spot_STPModes_ENUM struct {
 	EXPIRE_BOTH  string
 }
 
+type Spot_ChartIntervals_ENUM struct {
+	SECOND   string
+	MIN      string
+	MINS_3   string
+	MINS_5   string
+	MINS_15  string
+	MINS_30  string
+	HOUR     string
+	HOURS_2  string
+	HOURS_4  string
+	HOURS_6  string
+	HOURS_8  string
+	HOURS_12 string
+	DAY      string
+	DAYS_3   string
+	WEEK     string
+	MONTH    string
+}
+
 type Spot_Websocket_Constants struct {
 	URLs                      []string
 	MARKET_DATA_ONLY_ENDPOINT string
 }
 
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////// Declarations
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////// Definitions
 
 type Spot_RateLimitType struct {
 	RateLimitType string `json:"rateLimitType"`
@@ -489,7 +529,9 @@ type Spot_SymbolFilter_TRAILING_DELTA struct {
 	MaxTrailingBelowDelta int64  `json:"maxTrailingBelowDelta"`
 }
 
-//
+////////////////////////////////////////////////////////////////////////////////////////////////////////// Definitions
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////// Response Types
 
 type Spot_Time struct {
 	ServerTime int64 `json:"serverTime"`
@@ -500,7 +542,7 @@ type Spot_ExchangeInfo struct {
 	Timezone        string                `json:"timezone"`
 	ServerTime      int64                 `json:"serverTime"`
 	RateLimits      []*Spot_RateLimitType `json:"rateLimits"`
-	ExchangeFilters Spot_ExchangeFilters
+	ExchangeFilters *Spot_ExchangeFilters
 	Symbols_arr     []*Spot_Symbol `json:"symbols"`
 	Symbols         map[string]*Spot_Symbol
 	Sors            []*Spot_ExchangeInfo_SORS `json:"sors"`
@@ -514,14 +556,14 @@ type Spot_OrderBook struct {
 	//      "431.00000000"    // QTY
 	//    ]
 	//  ]
-	Bids [][2]float64 `json:"bids"`
+	Bids [][2]string `json:"bids"`
 	// 	"asks": [
 	//     [
 	//       "4.00000200",
 	//       "12.00000000"
 	//     ]
 	//   ]
-	Asks [][2]float64 `json:"asks"`
+	Asks [][2]string `json:"asks"`
 }
 
 type Spot_Trade struct {
@@ -578,4 +620,322 @@ type Spot_Candlestick struct {
 	TakerBuyQuoteAssetVolume string `json:"TakerBuyQuoteAssetVolume"`
 	// Unused field, ignore.
 	Unused string `json:"unused"`
+}
+
+type Spot_AveragePrice struct {
+	// Average price interval (in minutes)
+	Mins int64 `json:"mins"`
+	// Average price
+	Price string `json:"price"`
+	// Last trade time
+	CloseTime int64 `json:"closeTime"`
+}
+
+type Spot_Ticker_RollingWindow24h struct {
+	Symbol string `json:"symbol"`
+
+	PriceChange string `json:"priceChange"`
+
+	PriceChangePercent string `json:"priceChangePercent"`
+
+	WeightedAvgPrice string `json:"weightedAvgPrice"`
+
+	PrevClosePrice string `json:"prevClosePrice"`
+
+	LastPrice string `json:"lastPrice"`
+
+	LastQty string `json:"lastQty"`
+
+	BidPrice string `json:"bidPrice"`
+
+	BidQty string `json:"bidQty"`
+
+	AskPrice string `json:"askPrice"`
+
+	AskQty string `json:"askQty"`
+
+	OpenPrice string `json:"openPrice"`
+
+	HighPrice string `json:"highPrice"`
+
+	LowPrice string `json:"lowPrice"`
+
+	Volume string `json:"volume"`
+
+	QuoteVolume string `json:"quoteVolume"`
+
+	OpenTime int64 `json:"openTime"`
+
+	CloseTime int64 `json:"closeTime"`
+
+	// First tradeId
+	FirstId int64 `json:"firstId"`
+
+	// Last tradeId
+	LastId int64 `json:"lastId"`
+
+	// Trade count
+	Count int64 `json:"count"`
+}
+
+type Spot_Ticker_RollingWindow struct {
+	Symbol string `json:"symbol"`
+
+	// Absolute price change
+	PriceChange string `json:"priceChange"`
+
+	// Relative price change in percent
+	PriceChangePercent string `json:"priceChangePercent"`
+
+	// QuoteVolume / Volume
+	WeightedAvgPrice string `json:"weightedAvgPrice"`
+
+	OpenPrice string `json:"openPrice"`
+
+	HighPrice string `json:"highPrice"`
+
+	LowPrice string `json:"lowPrice"`
+
+	LastPrice string `json:"lastPrice"`
+
+	Volume string `json:"volume"`
+
+	// Sum of (price * volume) for all trades
+	QuoteVolume string `json:"quoteVolume"`
+
+	// Open time for ticker window
+	OpenTime int64 `json:"openTime"`
+
+	// Close time for ticker window
+	CloseTime int64 `json:"closeTime"`
+
+	// Trade IDs
+	FirstId int64 `json:"firstId"`
+
+	LastId int64 `json:"lastId"`
+
+	// Number of trades in the interval
+	Count int64 `json:"count"`
+}
+
+type Spot_MiniTicker_RollingWindow24h struct {
+
+	// Symbol Name
+	Symbol string `json:"symbol"`
+
+	// Opening price of the Interval
+	OpenPrice string `json:"openPrice"`
+
+	// Highest price in the interval
+	HighPrice string `json:"highPrice"`
+
+	// Lowest  price in the interval
+	LowPrice string `json:"lowPrice"`
+
+	// Closing price of the interval
+	LastPrice string `json:"lastPrice"`
+
+	// Total trade volume (in base asset)
+	Volume string `json:"volume"`
+
+	// Total trade volume (in quote asset)
+	QuoteVolume string `json:"quoteVolume"`
+
+	// Start of the ticker interval
+	OpenTime int64 `json:"openTime"`
+
+	// End of the ticker interval
+	CloseTime int64 `json:"closeTime"`
+
+	// First tradeId considered
+	FirstId int64 `json:"firstId"`
+
+	// Last tradeId considered
+	LastId int64 `json:"lastId"`
+
+	// Total trade count
+	Count int64 `json:"count"`
+}
+
+type Spot_MiniTicker_RollingWindow struct {
+	Symbol string `json:"symbol"`
+
+	OpenPrice string `json:"openPrice"`
+
+	HighPrice string `json:"highPrice"`
+
+	LowPrice string `json:"lowPrice"`
+
+	LastPrice string `json:"lastPrice"`
+
+	Volume string `json:"volume"`
+
+	// Sum of (price * volume) for all trades
+	QuoteVolume string `json:"quoteVolume"`
+
+	// Open time for ticker window
+	OpenTime int64 `json:"openTime"`
+
+	// Close time for ticker window
+	CloseTime int64 `json:"closeTime"`
+
+	// Trade IDs
+	FirstId int64 `json:"firstId"`
+
+	LastId int64 `json:"lastId"`
+
+	// Number of trades in the interval
+	Count int64 `json:"count"`
+}
+
+type Spot_Ticker struct {
+	Symbol string `json:"symbol"`
+
+	// Absolute price change
+	PriceChange string `json:"priceChange"`
+
+	// Relative price change in percent
+	PriceChangePercent string `json:"priceChangePercent"`
+
+	// quoteVolume / volume
+	WeightedAvgPrice string `json:"weightedAvgPrice"`
+
+	OpenPrice string `json:"openPrice"`
+
+	HighPrice string `json:"highPrice"`
+
+	LowPrice string `json:"lowPrice"`
+
+	LastPrice string `json:"lastPrice"`
+
+	// Volume in base asset
+	Volume string `json:"volume"`
+
+	// Volume in quote asset
+	QuoteVolume string `json:"quoteVolume"`
+
+	OpenTime int64 `json:"openTime"`
+
+	CloseTime int64 `json:"closeTime"`
+
+	// Trade ID of the first trade in the interval
+	FirstId int64 `json:"firstId"`
+
+	// Trade ID of the last trade in the interval
+	LastId int64 `json:"lastId"`
+
+	// Number of trades in the interval
+	Count int64 `json:"count"`
+}
+
+type Spot_MiniTicker struct {
+	Symbol string `json:"symbol"`
+
+	OpenPrice string `json:"openPrice"`
+
+	HighPrice string `json:"highPrice"`
+
+	LowPrice string `json:"lowPrice"`
+
+	LastPrice string `json:"lastPrice"`
+
+	// Volume in base asset
+	Volume string `json:"volume"`
+
+	// Volume in quote asset
+	QuoteVolume string `json:"quoteVolume"`
+
+	OpenTime int64 `json:"openTime"`
+
+	CloseTime int64 `json:"closeTime"`
+
+	// Trade ID of the first trade in the interval
+	FirstId int64 `json:"firstId"`
+
+	// Trade ID of the last trade in the interval
+	LastId int64 `json:"lastId"`
+
+	// Number of trades in the interval
+	Count int64 `json:"count"`
+}
+
+type Spot_PriceTicker struct {
+	Symbol string `json:"symbol"`
+	Price  string `json:"price"`
+}
+
+type Spot_BookTicker struct {
+	Symbol string `json:"symbol"`
+
+	BidPrice string `json:"bidPrice"`
+
+	BidQty string `json:"bidQty"`
+
+	AskPrice string `json:"askPrice"`
+
+	AskQty string `json:"askQty"`
+}
+type Spot_AccountInfo struct {
+	UID                        int64 `json:"uid"`
+	MakerCommission            int64 `json:"makerCommission"`
+	TakerCommission            int64 `json:"takerCommission"`
+	BuyerCommission            int64 `json:"buyerCommission"`
+	SellerCommission           int64 `json:"sellerCommission"`
+	CanTrade                   bool  `json:"canTrade"`
+	CanWithdraw                bool  `json:"canWithdraw"`
+	CanDeposit                 bool  `json:"canDeposit"`
+	Brokered                   bool  `json:"brokered"`
+	RequireSelfTradePrevention bool  `json:"requireSelfTradePrevention"`
+	PreventSor                 bool  `json:"preventSor"`
+	UpdateTime                 int64 `json:"updateTime"`
+	// "AccountType": "SPOT"
+	AccountType string `json:"accountType"`
+	//		"CommissionRates": {
+	//		  "Maker": "0.00150000",
+	//		  "Taker": "0.00150000",
+	//		  "Buyer": "0.00000000",
+	//		  "Seller": "0.00000000"
+	//		}
+	CommissionRates *Spot_AccountInfo_CommissionRates `json:"commissionRates"`
+	// [
+	//		{
+	//			"Asset": "BTC",
+	//			"Free": "4723846.89208129",
+	//			"Locked": "0.00000000"
+	//		},
+	//		{
+	//			"Asset": "LTC",
+	//			"Free": "4763368.68006011",
+	//			"Locked": "0.00000000"
+	//		}
+	//	]
+	Balances []*Spot_AccountInfo_Balances `json:"balances"`
+	// "Permissions": [
+	//		"SPOT"
+	//	]
+	Permissions []string `json:"permissions"`
+}
+
+//	{
+//		"Maker": "0.00150000",
+//		"Taker": "0.00150000",
+//		"Buyer": "0.00000000",
+//		"Seller": "0.00000000"
+//	}
+type Spot_AccountInfo_CommissionRates struct {
+	Maker  string `json:"maker"`
+	Taker  string `json:"taker"`
+	Buyer  string `json:"buyer"`
+	Seller string `json:"seller"`
+}
+
+//	{
+//		"Asset": "LTC",
+//		"Free": "4763368.68006011",
+//		"Locked": "0.00000000"
+//	}
+type Spot_AccountInfo_Balances struct {
+	Asset  string `json:"asset"`
+	Free   string `json:"free"`
+	Locked string `json:"locked"`
 }
