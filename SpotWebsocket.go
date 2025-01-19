@@ -2,6 +2,7 @@ package Binance
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -1031,7 +1032,7 @@ type SpotWS_PartialBookDepth_Socket struct {
 }
 
 func (*SpotWS_PartialBookDepth_Socket) CreateStreamName(symbol string, levels int, isFast bool) string {
-	streamName := strings.ToLower(symbol) + "@depth" + string(levels)
+	streamName := strings.ToLower(symbol) + "@depth" + strconv.FormatInt(int64(levels), 10)
 	if isFast {
 		streamName += "@100ms"
 	}

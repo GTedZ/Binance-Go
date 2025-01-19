@@ -38,7 +38,7 @@ func (spot *Spot) init(binance *Binance) {
 // Data Source: Memory
 func (spot *Spot) Ping() (latency int64, request *Response, err *Error) {
 	startTime := time.Now().UnixMilli()
-	httpResp, err := spot.makeSpotRequest(&SpotRequest{
+	httpResp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ping",
@@ -60,11 +60,11 @@ func (spot *Spot) Ping() (latency int64, request *Response, err *Error) {
 // Weight: 1
 //
 // Data Source: Memory
-func (spot *Spot) Time() (*Spot_Time, *Response, *Error) {
+func (spot *Spot) ServerTime() (*Spot_Time, *Response, *Error) {
 	var spotTime Spot_Time
 
 	startTime := time.Now().UnixMilli()
-	httpResp, err := spot.makeSpotRequest(&SpotRequest{
+	httpResp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/time",
@@ -142,7 +142,7 @@ func (spot *Spot) ExchangeInfo_Params(params *Spot_ExchangeInfo_Params) (*Spot_E
 		opts["showPermissionSets"] = !params.DontShowPermissionSets
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/exchangeInfo",
@@ -167,7 +167,7 @@ func (spot *Spot) ExchangeInfo_Params(params *Spot_ExchangeInfo_Params) (*Spot_E
 //
 // Weight: 20
 func (spot *Spot) ExchangeInfo() (*Spot_ExchangeInfo, *Response, *Error) {
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/exchangeInfo",
@@ -376,7 +376,7 @@ func (spot *Spot) OrderBook(symbol string, limit ...int64) (*Spot_OrderBook, *Re
 		opts["limit"] = limit[0]
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/depth",
@@ -413,7 +413,7 @@ func (spot *Spot) RecentTrades(symbol string, limit ...int64) ([]*Spot_Trade, *R
 		opts["limit"] = limit[0]
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/trades",
@@ -470,7 +470,7 @@ func (spot *Spot) OldTrades(symbol string, opt_params ...*Spot_OldTrades_Params)
 		}
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/historicalTrades",
@@ -541,7 +541,7 @@ func (spot *Spot) AggTrades(symbol string, opt_params ...*Spot_AggTrades_Params)
 		}
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/aggTrades",
@@ -638,7 +638,7 @@ func (spot *Spot) Candlesticks(symbol string, interval string, opt_params ...*Sp
 		}
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/klines",
@@ -660,10 +660,10 @@ func (spot *Spot) Candlesticks(symbol string, interval string, opt_params ...*Sp
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Spot_Candlestick{
 			OpenTime:                 int64(raw[0].(float64)),
-			OpenPrice:                raw[1].(string),
-			HighPrice:                raw[2].(string),
-			LowPrice:                 raw[3].(string),
-			ClosePrice:               raw[4].(string),
+			Open:                     raw[1].(string),
+			High:                     raw[2].(string),
+			Low:                      raw[3].(string),
+			Close:                    raw[4].(string),
 			Volume:                   raw[5].(string),
 			CloseTime:                int64(raw[6].(float64)),
 			QuoteAssetVolume:         raw[7].(string),
@@ -700,7 +700,7 @@ func (spot *Spot) UIKlines(symbol string, interval string, opt_params ...*Spot_C
 		}
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/uiKlines",
@@ -722,10 +722,10 @@ func (spot *Spot) UIKlines(symbol string, interval string, opt_params ...*Spot_C
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Spot_Candlestick{
 			OpenTime:                 int64(raw[0].(float64)),
-			OpenPrice:                raw[1].(string),
-			HighPrice:                raw[2].(string),
-			LowPrice:                 raw[3].(string),
-			ClosePrice:               raw[4].(string),
+			Open:                     raw[1].(string),
+			High:                     raw[2].(string),
+			Low:                      raw[3].(string),
+			Close:                    raw[4].(string),
 			Volume:                   raw[5].(string),
 			CloseTime:                int64(raw[6].(float64)),
 			QuoteAssetVolume:         raw[7].(string),
@@ -745,7 +745,7 @@ func (spot *Spot) AveragePrice(symbol string) (*Spot_AveragePrice, *Response, *E
 	opts := make(map[string]interface{})
 	opts["symbol"] = symbol
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/avgPrice",
@@ -775,7 +775,7 @@ func (spot *Spot) Ticker_RollingWindow24h(symbol ...string) ([]*Spot_Ticker_Roll
 		opts["symbols"] = symbol
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker/24hr",
@@ -805,7 +805,7 @@ func (spot *Spot) MiniTicker_RollingWindow24h(symbol ...string) ([]*Spot_MiniTic
 		opts["symbols"] = symbol
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker/24hr",
@@ -839,7 +839,7 @@ func (spot *Spot) Ticker_RollingWindow(opt_params *Spot_Ticker_RollingWindow_Par
 		opts["symbols"] = opt_params.Symbols
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker",
@@ -869,7 +869,7 @@ func (spot *Spot) MiniTicker_RollingWindow(opt_params *Spot_Ticker_RollingWindow
 		opts["symbols"] = opt_params.Symbols
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker",
@@ -905,7 +905,7 @@ func (spot *Spot) Ticker(opt_params *Spot_Ticker_Params) ([]*Spot_Ticker, *Respo
 		opts["timezone"] = opt_params.Timezone
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker/tradingDay",
@@ -936,7 +936,7 @@ func (spot *Spot) MiniTicker(opt_params *Spot_Ticker_Params) ([]*Spot_MiniTicker
 		opts["timezone"] = opt_params.Timezone
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker/tradingDay",
@@ -963,7 +963,7 @@ func (spot *Spot) PriceTicker(symbol ...string) ([]*Spot_PriceTicker, *Response,
 		opts["symbols"] = symbol
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker/price",
@@ -991,7 +991,7 @@ func (spot *Spot) BookTicker(symbol ...string) ([]*Spot_BookTicker, *Response, *
 		opts["symbols"] = symbol
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.NONE,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/ticker/bookTicker",
@@ -1014,6 +1014,329 @@ func (spot *Spot) BookTicker(symbol ...string) ([]*Spot_BookTicker, *Response, *
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 
+// //////////////////////////// Orders \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// # DISCLAIMER
+//
+// Maybe someone will have the patience to create a unified structure for the functions
+// that is similar to the one I used for my javascript library "binance-lib" that is still performant
+// specifically in https://github.com/GTedZ/Binance-lib/blob/main/Spot/RESTful.js#L589
+func (spot *Spot) newOrder(opts map[string]interface{}) (*Spot_Order, *Response, *Error) {
+	resp, err := spot.makeRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.TRADE,
+		method:       Constants.Methods.POST,
+		url:          "/api/v3/order",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var order *Spot_Order
+	processingErr := json.Unmarshal(resp.Body, &order)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return order, resp, nil
+}
+
+type Spot_Order_Params struct {
+	TimeInForce             string
+	Quantity                string
+	QuoteOrderQty           string
+	Price                   string
+	NewClientOrderId        string
+	StrategyId              int64
+	StrategyType            int64
+	StopPrice               string
+	TrailingDelta           int64
+	IcebergQty              string
+	NewOrderRespType        string
+	SelfTradePreventionMode string
+	RecvWindow              int64
+}
+
+func (spot *Spot) NewOrder(symbol string, side string, Type string, opt_params ...Spot_Order_Params) (*Spot_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = Type
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.TimeInForce) {
+			opts["timeInForce"] = params.TimeInForce
+		}
+		if IsDifferentFromDefault(params.Quantity) {
+			opts["quantity"] = params.Quantity
+		}
+		if IsDifferentFromDefault(params.QuoteOrderQty) {
+			opts["quoteOrderQty"] = params.QuoteOrderQty
+		}
+		if IsDifferentFromDefault(params.Price) {
+			opts["price"] = params.Price
+		}
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.StrategyId) {
+			opts["strategyId"] = params.StrategyId
+		}
+		if IsDifferentFromDefault(params.StrategyType) {
+			opts["strategyType"] = params.StrategyType
+		}
+		if IsDifferentFromDefault(params.StopPrice) {
+			opts["stopPrice"] = params.StopPrice
+		}
+		if IsDifferentFromDefault(params.TrailingDelta) {
+			opts["trailingDelta"] = params.TrailingDelta
+		}
+		if IsDifferentFromDefault(params.IcebergQty) {
+			opts["icebergQty"] = params.IcebergQty
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return spot.newOrder(opts)
+}
+
+///////////////////////// LIMIT \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+type Spot_LimitOrder_Params struct {
+	TimeInForce             string
+	NewClientOrderId        string
+	StrategyId              int64
+	StrategyType            int64
+	IcebergQty              string
+	NewOrderRespType        string
+	SelfTradePreventionMode string
+	RecvWindow              int64
+}
+
+func (spot *Spot) LimitOrder(symbol string, side string, price string, quantity string, opt_params ...Spot_LimitOrder_Params) (*Spot_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = "LIMIT"
+	opts["price"] = price
+	opts["quantity"] = quantity
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.TimeInForce) {
+			opts["timeInForce"] = params.TimeInForce
+		}
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.StrategyId) {
+			opts["strategyId"] = params.StrategyId
+		}
+		if IsDifferentFromDefault(params.StrategyType) {
+			opts["strategyType"] = params.StrategyType
+		}
+		if IsDifferentFromDefault(params.IcebergQty) {
+			opts["icebergQty"] = params.IcebergQty
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return spot.newOrder(opts)
+}
+
+func (spot *Spot) LimitBuy(symbol string, price string, quantity string, opt_params ...Spot_LimitOrder_Params) (*Spot_Order, *Response, *Error) {
+	return spot.LimitOrder(symbol, "BUY", price, quantity, opt_params...)
+}
+
+func (spot *Spot) LimitSell(symbol string, price string, quantity string, opt_params ...Spot_LimitOrder_Params) (*Spot_Order, *Response, *Error) {
+	return spot.LimitOrder(symbol, "SELL", price, quantity, opt_params...)
+}
+
+///////////////////////// LIMIT ////////////////////////////
+
+///////////////////////// LIMIT_MAKER \\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+type Spot_LimitMakerOrder_Params struct {
+	TimeInForce             string
+	NewClientOrderId        string
+	StrategyId              int64
+	StrategyType            int64
+	IcebergQty              string
+	NewOrderRespType        string
+	SelfTradePreventionMode string
+	RecvWindow              int64
+}
+
+func (spot *Spot) LimitMakerOrder(symbol string, side string, quantity string, price string, opt_params ...Spot_LimitMakerOrder_Params) (*Spot_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = "LIMIT_MAKER"
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.TimeInForce) {
+			opts["timeInForce"] = params.TimeInForce
+		}
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.StrategyId) {
+			opts["strategyId"] = params.StrategyId
+		}
+		if IsDifferentFromDefault(params.StrategyType) {
+			opts["strategyType"] = params.StrategyType
+		}
+		if IsDifferentFromDefault(params.IcebergQty) {
+			opts["icebergQty"] = params.IcebergQty
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return spot.newOrder(opts)
+}
+
+func (spot *Spot) LimitMakerBuy(symbol string, quantity string, price string, opt_params ...Spot_LimitMakerOrder_Params) (*Spot_Order, *Response, *Error) {
+	return spot.LimitMakerOrder(symbol, "BUY", quantity, price, opt_params...)
+}
+
+func (spot *Spot) LimitMakerSell(symbol string, side string, quantity string, price string, opt_params ...Spot_LimitMakerOrder_Params) (*Spot_Order, *Response, *Error) {
+	return spot.LimitMakerOrder(symbol, "SELL", quantity, price, opt_params...)
+}
+
+///////////////////////// LIMIT_MAKER ///////////////////////////
+
+///////////////////////// MARKET \\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+type Spot_MarketOrder_Params struct {
+	NewClientOrderId        string
+	StrategyId              int64
+	StrategyType            int64
+	NewOrderRespType        string
+	SelfTradePreventionMode string
+	RecvWindow              int64
+}
+
+func (spot *Spot) MarketOrder(symbol string, side string, orderValue string, is_OrderValue_in_BaseAsset bool, opt_params ...Spot_MarketOrder_Params) (*Spot_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = "MARKET"
+	if is_OrderValue_in_BaseAsset {
+		opts["quantity"] = orderValue
+	} else {
+		opts["quoteOrderQty"] = orderValue
+	}
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.StrategyId) {
+			opts["strategyId"] = params.StrategyId
+		}
+		if IsDifferentFromDefault(params.StrategyType) {
+			opts["strategyType"] = params.StrategyType
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return spot.newOrder(opts)
+}
+
+func (spot *Spot) MarketBuy(symbol string, side string, orderValue string, is_OrderValue_in_BaseAsset bool, opt_params ...Spot_MarketOrder_Params) (*Spot_Order, *Response, *Error) {
+	return spot.MarketOrder(symbol, "BUY", orderValue, is_OrderValue_in_BaseAsset, opt_params...)
+}
+
+func (spot *Spot) MarketSell(symbol string, side string, orderValue string, is_OrderValue_in_BaseAsset bool, opt_params ...Spot_MarketOrder_Params) (*Spot_Order, *Response, *Error) {
+	return spot.MarketOrder(symbol, "SELL", orderValue, is_OrderValue_in_BaseAsset, opt_params...)
+}
+
+///////////////////////// MARKET ///////////////////////////
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\ Orders ////////////////////////////////////////
+
+type Spot_QueryOrder_Params struct {
+	OrigClientOrderId string
+	RecvWindow        int64
+}
+
+func (spot *Spot) QueryOrder(symbol string, orderId int64, opt_params ...Spot_QueryOrder_Params) (*Spot_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["orderId"] = orderId
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.OrigClientOrderId) {
+			opts["origClientOrderId"] = params.OrigClientOrderId
+			delete(opts, "orderId")
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	resp, err := spot.makeRequest(&SpotRequest{
+		securityType: SPOT_Constants.SecurityTypes.USER_DATA,
+		method:       Constants.Methods.GET,
+		url:          "/api/v3/order",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var order *Spot_Order
+	processingErr := json.Unmarshal(resp.Body, &order)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return order, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
 type Spot_AccountInfo_Params struct {
 	OmitZeroBalances bool
 	RecvWindow       int64
@@ -1030,7 +1353,7 @@ func (spot *Spot) AccountInfo(opt_params ...Spot_AccountInfo_Params) (*Spot_Acco
 		}
 	}
 
-	resp, err := spot.makeSpotRequest(&SpotRequest{
+	resp, err := spot.makeRequest(&SpotRequest{
 		securityType: SPOT_Constants.SecurityTypes.USER_DATA,
 		method:       Constants.Methods.GET,
 		url:          "/api/v3/account",
@@ -1061,7 +1384,7 @@ type SpotRequest struct {
 	securityType string
 }
 
-func (spot *Spot) makeSpotRequest(request *SpotRequest) (*Response, *Error) {
+func (spot *Spot) makeRequest(request *SpotRequest) (*Response, *Error) {
 
 	switch request.securityType {
 	case SPOT_Constants.SecurityTypes.NONE:

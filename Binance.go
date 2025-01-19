@@ -27,6 +27,10 @@ func CreateReadClient() Binance {
 func CreateClient(APIKEY string, APISECRET string) Binance {
 	binance := CreateReadClient()
 	binance.API.Set(APIKEY, APISECRET)
+
+	binance.Spot.init(&binance)
+	binance.Futures.init(&binance)
+
 	return binance
 }
 

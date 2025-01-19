@@ -597,29 +597,29 @@ type Spot_AggTrade struct {
 
 type Spot_Candlestick struct {
 	// Kline open time
-	OpenTime int64 `json:"openTime"`
+	OpenTime int64
 	// Open price
-	OpenPrice string `json:"openPrice"`
+	Open string
 	// High price
-	HighPrice string `json:"highPrice"`
+	High string
 	// Low price
-	LowPrice string `json:"lowPrice"`
+	Low string
 	// Close price
-	ClosePrice string `json:"closePrice"`
+	Close string
 	// Volume
-	Volume string `json:"volume"`
+	Volume string
 	// Kline Close time
-	CloseTime int64 `json:"closeTime"`
+	CloseTime int64
 	// Quote asset volume
-	QuoteAssetVolume string `json:"quoteAssetVolume"`
+	QuoteAssetVolume string
 	// Number of trades
-	TradeCount int64 `json:"tradeCount"`
+	TradeCount int64
 	// Taker buy base asset volume
-	TakerBuyBaseAssetVolume string `json:"TakerBuyBaseAssetVolume"`
+	TakerBuyBaseAssetVolume string
 	// Taker buy quote asset volume
-	TakerBuyQuoteAssetVolume string `json:"TakerBuyQuoteAssetVolume"`
+	TakerBuyQuoteAssetVolume string
 	// Unused field, ignore.
-	Unused string `json:"unused"`
+	Unused string
 }
 
 type Spot_AveragePrice struct {
@@ -875,6 +875,43 @@ type Spot_BookTicker struct {
 
 	AskQty string `json:"askQty"`
 }
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+type Spot_Order struct {
+	Symbol                  string              `json:"symbol"`
+	OrderId                 int64               `json:"orderId"`
+	OrderListId             int64               `json:"orderListId"`
+	ClientOrderId           string              `json:"clientOrderId"`
+	TransactTime            int64               `json:"transactTime"`
+	Price                   string              `json:"price"`
+	OrigQty                 string              `json:"origQty"`
+	ExecutedQty             string              `json:"executedQty"`
+	OrigQuoteOrderQty       string              `json:"origQuoteOrderQty"`
+	CummulativeQuoteQty     string              `json:"cummulativeQuoteQty"`
+	Status                  string              `json:"status"`
+	TimeInForce             string              `json:"timeInForce"`
+	Type                    string              `json:"type"`
+	Side                    string              `json:"side"`
+	WorkingTime             int64               `json:"workingTime"`
+	SelfTradePreventionMode string              `json:"selfTradePreventionMode"`
+	Fills                   []*Spot_Order_Fills `json:"fills"`
+}
+
+type Spot_Order_Fills struct {
+	Price           string `json:"price"`
+	Qty             string `json:"qty"`
+	Commission      string `json:"commission"`
+	CommissionAsset string `json:"commissionAsset"`
+	TradeId         int64  `json:"tradeId"`
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
 type Spot_AccountInfo struct {
 	UID                        int64 `json:"uid"`
 	MakerCommission            int64 `json:"makerCommission"`

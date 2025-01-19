@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"reflect"
 )
 
 type BinaryUtils struct{}
@@ -61,4 +62,16 @@ func (utils *BinaryUtils) DeserializeString(data []byte) (string, error) {
 		return "", fmt.Errorf("deserialization error: %v", err)
 	}
 	return string(strBytes), nil
+}
+
+// Checks if a value is different from its default value.
+func IsDifferentFromDefault(value any) bool {
+	// Get the reflect.Value of the input
+	val := reflect.ValueOf(value)
+
+	// Get the default value of the type
+	defaultValue := reflect.Zero(val.Type()).Interface()
+
+	// Compare the input value with the default value
+	return !reflect.DeepEqual(value, defaultValue)
 }

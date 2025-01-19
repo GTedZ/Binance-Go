@@ -365,6 +365,10 @@ func (requestClient *RequestClient) Signed(method string, baseURL string, URL st
 
 	params["timestamp"] = time.Now().UnixMilli() + requestClient.binance.configs.timestamp_offset
 
+	if requestClient.binance.Opts.recvWindow != 5000 && params["recvWindow"] == nil {
+		params["recvWindow"] = requestClient.binance.Opts.recvWindow
+	}
+
 	paramString := createQueryString(params, false)
 
 	h := hmac.New(sha256.New, []byte(requestClient.api.SECRET))

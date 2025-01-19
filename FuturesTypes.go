@@ -25,14 +25,13 @@ var FUTURES_Constants = struct {
 	STPModes   Futures_STPModes_ENUM
 	PriceMatch Futures_PriceMatch_ENUM
 
-	ExchangeFilterTypes Futures_ExchangeFilters_ENUM
-	SymbolFilterTypes   FUTURES_Symbol_FilterTypes_ENUM
-	RateLimitTypes      Futures_RateLimitTypes_ENUM
-	RateLimitIntervals  Futures_RateLimitIntervals_ENUM
+	SymbolFilterTypes  FUTURES_Symbol_FilterTypes_ENUM
+	RateLimitTypes     Futures_RateLimitTypes_ENUM
+	RateLimitIntervals Futures_RateLimitIntervals_ENUM
 
 	Websocket Futures_Websocket_Constants
 }{
-	URLs: [1]string{"https://fapi.binnace.com"},
+	URLs: [1]string{"https://fapi.binance.com"},
 	SecurityTypes: Futures_SecurityTypes_ENUM{
 		NONE:        "NONE",
 		MARKET_DATA: "MARKET_DATA",
@@ -278,23 +277,14 @@ type Futures_PriceMatch_ENUM struct {
 	QUEUE_20    string
 }
 
-type Futures_ExchangeFilters_ENUM struct {
-}
-
 type FUTURES_Symbol_FilterTypes_ENUM struct {
-	PRICE_FILTER           string
-	PERCENT_PRICE          string
-	PERCENT_PRICE_BY_SIDE  string
-	LOT_SIZE               string
-	MIN_NOTIONAL           string
-	NOTIONAL               string
-	ICEBERG_PARTS          string
-	MARKET_LOT_SIZE        string
-	MAX_NUM_ORDERS         string
-	MAX_NUM_ALGO_ORDERS    string
-	MAX_NUM_ICEBERG_ORDERS string
-	MAX_POSITION           string
-	TRAILING_DELTA         string
+	PRICE_FILTER        string
+	LOT_SIZE            string
+	MARKET_LOT_SIZE     string
+	MAX_NUM_ORDERS      string
+	MAX_NUM_ALGO_ORDERS string
+	PERCENT_PRICE       string
+	MIN_NOTIONAL        string
 }
 
 type Futures_RateLimitTypes_ENUM struct {
@@ -352,7 +342,7 @@ type Futures_Symbol struct {
 	UnderlyingSubType     []string `json:"underlyingSubType"`
 	SettlePlan            int64    `json:"settlePlan"`
 	TriggerProtect        string   `json:"triggerProtect"`
-	Filters               *Futures_SymbolFilters
+	Filters               Futures_SymbolFilters
 	OrderType             []string `json:"orderType"`
 	TimeInForce           []string `json:"timeInForce"`
 	LiquidationFee        string   `json:"liquidationFee"`
@@ -396,45 +386,136 @@ type Futures_SymbolFilter_MARKET_LOT_SIZE struct {
 }
 
 type Futures_SymbolFilter_MAX_NUM_ORDERS struct {
-	FilterType   string `json:"filterType"`
-	MaxNumOrders int64  `json:"maxNumOrders"`
+	FilterType string `json:"filterType"`
+	Limit      int64  `json:"limit"`
 }
 
 type Futures_SymbolFilter_MAX_NUM_ALGO_ORDERS struct {
-	FilterType       string `json:"filterType"`
-	MaxNumAlgoOrders int64  `json:"maxNumAlgoOrders"`
+	FilterType string `json:"filterType"`
+	Limit      int64  `json:"limit"`
 }
 
 type Futures_SymbolFilter_PERCENT_PRICE struct {
-	FilterType     string `json:"filterType"`
-	MultiplierUp   string `json:"multiplierUp"`
-	MultiplierDown string `json:"multiplierDown"`
-	AvgPriceMins   int64  `json:"avgPriceMins"`
+	FilterType        string `json:"filterType"`
+	MultiplierUp      string `json:"multiplierUp"`
+	MultiplierDown    string `json:"multiplierDown"`
+	MultiplierDecimal string `json:"multiplierDecimal"`
 }
 
 type Futures_SymbolFilter_MIN_NOTIONAL struct {
-	FilterType    string `json:"filterType"`
-	MinNotional   string `json:"minNotional"`
-	ApplyToMarket bool   `json:"applyToMarket"`
-	AvgPriceMins  int64  `json:"avgPriceMins"`
+	FilterType string `json:"filterType"`
+	Notional   string `json:"notional"`
 }
 
 //
 
 type Futures_Time struct {
 	ServerTime int64 `json:"serverTime"`
-	Latency    int64
+
+	Latency int64
 }
 
 type Futures_ExchangeInfo struct {
-	ExchangeFilters []Futures_ExchangeFilters_ENUM `json:"exchangeFilters"`
-	RateLimits      []*Futures_RateLimitType       `json:"rateLimits"`
-	ServerTime      int64                          `json:"serverTime"`
-	Assets_arr      []*Futures_Asset               `json:"assets"`
-	Symbols_arr     []*Futures_Symbol              `json:"symbols"`
-	Sors            []*Futures_ExchangeInfo_SORS   `json:"sors"`
-	Timezone        string                         `json:"timezone"`
+	// Not used by binance
+	ExchangeFilters any                      `json:"exchangeFilters"`
+	RateLimits      []*Futures_RateLimitType `json:"rateLimits"`
+	ServerTime      int64                    `json:"serverTime"`
+	Assets_arr      []*Futures_Asset         `json:"assets"`
+	Symbols_arr     []*Futures_Symbol        `json:"symbols"`
+	Timezone        string                   `json:"timezone"`
 
 	Assets  map[string]*Futures_Asset
 	Symbols map[string]*Futures_Symbol
+}
+
+type Futures_OrderBook struct {
+	LastUpdateId int64       `json:"lastUpdateId"`
+	Time         int64       `json:"E"`
+	TransactTime int64       `json:"T"`
+	Bids         [][2]string `json:"bids"`
+	Asks         [][2]string `json:"asks"`
+}
+
+type Futures_Trade struct {
+	Id           int64  `json:"id"`
+	Price        string `json:"price"`
+	Qty          string `json:"qty"`
+	QuoteQty     string `json:"quoteQty"`
+	Timestamp    int64  `json:"time"`
+	IsBuyerMaker bool   `json:"isBuyerMaker"`
+}
+
+type Futures_AggTrade struct {
+	AggTradeId   int64  `json:"a"`
+	Price        string `json:"p"`
+	Qty          string `json:"q"`
+	FirstTradeId int64  `json:"f"`
+	LastTradeId  int64  `json:"l"`
+	Timestamp    int64  `json:"T"`
+	IsBuyerMaker bool   `json:"m"`
+}
+
+type Futures_Candlestick struct {
+	// Kline open time
+	OpenTime int64
+	// Open price
+	Open string
+	// High price
+	High string
+	// Low price
+	Low string
+	// Close price
+	Close string
+	// Volume
+	Volume string
+	// Kline Close time
+	CloseTime int64
+	// Quote asset volume
+	QuoteAssetVolume string
+	// Number of trades
+	TradeCount int64
+	// Taker buy base asset volume
+	TakerBuyBaseAssetVolume string
+	// Taker buy quote asset volume
+	TakerBuyQuoteAssetVolume string
+	// Unused field, ignore.
+	Unused string
+}
+
+type Futures_PriceCandlestick struct {
+	// Kline open time
+	OpenTime int64
+	// Open price
+	Open string
+	// High price
+	High string
+	// Low price
+	Low string
+	// Close price
+	Close string
+	// Volume
+	Ignore1 string
+	// Kline Close time
+	CloseTime int64
+	// Quote asset volume
+	Ignore2 string
+	// Number of trades
+	Ignore3 int64
+	// Taker buy base asset volume
+	Ignore4 string
+	// Taker buy quote asset volume
+	Ignore5 string
+	// Unused field, ignore.
+	Unused string
+}
+
+type Futures_MarkPrice struct {
+	Symbol               string `json:"symbol"`
+	MarkPrice            string `json:"markPrice"`
+	IndexPrice           string `json:"indexPrice"`
+	EstimatedSettlePrice string `json:"estimatedSettlePrice"`
+	LastFundingRate      string `json:"lastFundingRate"`
+	NextFundingTime      int64  `json:"nextFundingTime"`
+	InterestRate         string `json:"interestRate"`
+	Time                 int64  `json:"time"`
 }
