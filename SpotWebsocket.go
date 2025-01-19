@@ -1197,7 +1197,7 @@ func (spot_ws *Spot_Websockets) DiffBookDepth(publicOnMessage func(diffBookDepth
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ManagedOrderBook_Handler struct {
+type SpotWS_ManagedOrderBook_Handler struct {
 	Socket    *SpotWS_DiffBookDepth_Socket
 	OrderBook *Spot_OrderBook
 
@@ -1211,7 +1211,7 @@ type ManagedOrderBook_Handler struct {
 //
 // # Initial request weight usage: 250
 func (ws_spot *Spot_Websockets) ManagedOrderBook(OnMessage func(), Symbol string, IsFast bool) *Error {
-	// var handler ManagedOrderBook_Handler
+	// var handler SpotWS_ManagedOrderBook_Handler
 
 	// Asks: lowest to highest
 	// Bids: highest to lowest
@@ -1262,7 +1262,7 @@ func (*Spot_Websockets) CreateSocket(streams []string, isCombined bool) (*Spot_W
 	return ws, nil
 }
 
-func createRequestObject() map[string]interface{} {
+func (spot_ws *Spot_Websocket) createRequestObject() map[string]interface{} {
 	requestObj := make(map[string]interface{})
 
 	requestObj["id"] = uuid.New().String()
@@ -1275,7 +1275,7 @@ type SpotWS_ListSubscriptions_Response struct {
 }
 
 func (spot_ws *Spot_Websocket) ListSubscriptions(timeout_sec ...int) (resp *SpotWS_ListSubscriptions_Response, hasTimedOut bool, err *Error) {
-	requestObj := createRequestObject()
+	requestObj := spot_ws.createRequestObject()
 	requestObj["method"] = "LIST_SUBSCRIPTIONS"
 	data, timedOut, err := spot_ws.Websocket.SendRequest_sync(requestObj, timeout_sec[0])
 	if err != nil || timedOut {
@@ -1296,7 +1296,7 @@ type SpotWS_Subscribe_Response struct {
 }
 
 func (spot_ws *Spot_Websocket) Subscribe(stream ...string) (resp *SpotWS_Subscribe_Response, hasTimedOut bool, err *Error) {
-	requestObj := createRequestObject()
+	requestObj := spot_ws.createRequestObject()
 	requestObj["method"] = "SUBSCRIBE"
 	requestObj["params"] = stream
 	data, timedOut, err := spot_ws.Websocket.SendRequest_sync(requestObj)
@@ -1322,7 +1322,7 @@ type SpotWS_Unsubscribe_Response struct {
 }
 
 func (spot_ws *Spot_Websocket) Unsubscribe(stream ...string) (resp *SpotWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
-	requestObj := createRequestObject()
+	requestObj := spot_ws.createRequestObject()
 	requestObj["method"] = "UNSUBSCRIBE"
 	requestObj["params"] = stream
 	data, timedOut, err := spot_ws.Websocket.SendRequest_sync(requestObj)

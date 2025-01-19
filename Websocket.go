@@ -121,7 +121,7 @@ func setUpSocket(websocket *Websocket, conn *ws.Conn) {
 				time.Sleep(500 * time.Millisecond)
 				continue
 			}
-			if PRINT_WS_MESSAGES {
+			if WS_PRINT_MESSAGES {
 				fmt.Printf("Type: %d, message: %s\n", msgType, string(msg))
 			}
 

@@ -14,7 +14,7 @@ type Futures struct {
 
 	API APIKEYS
 
-	// Websockets Futures_Websockets
+	Websockets Futures_Websockets
 }
 
 func (futures *Futures) init(binance *Binance) {
@@ -26,6 +26,8 @@ func (futures *Futures) init(binance *Binance) {
 	futures.baseURL = FUTURES_Constants.URLs[0]
 
 	futures.API.Set(binance.API.KEY, binance.API.SECRET)
+
+	futures.Websockets.binance = binance
 }
 
 /////////////////////////////////////////////////////////////////////////////////

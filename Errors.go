@@ -2,7 +2,9 @@ package Binance
 
 import (
 	"fmt"
+	"os"
 	"strconv"
+	"time"
 )
 
 type Error struct {
@@ -38,18 +40,47 @@ const (
 	REQUEST_TIMEOUT_ERR
 )
 
-func LocalError(code int, msg string) *Error {
+func newError(isLocal bool, statusCode int, code int, message string) *Error {
 	err := &Error{
-		IsLocalError: true,
+		IsLocalError: isLocal,
+		StatusCode:   statusCode,
 		Code:         code,
-		Message:      msg,
+		Message:      message,
 	}
 
 	if PRINT_ERRORS {
 		fmt.Println(err.Error())
 	}
 
+	if LOG_ERRORS && LOG_ERRORS_FILE != "" {
+		logErrorToFile(err)
+	}
+
 	return err
+}
+
+func logErrorToFile(err *Error) {
+	file, errOpen := os.OpenFile(LOG_ERRORS_FILE, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if errOpen != nil {
+		fmt.Println("Failed to open log file:", errOpen)
+		return
+	}
+	defer file.Close()
+
+	timestamp := time.Now()
+	logEntry := fmt.Sprintf("%d - %s: %s\n",
+		timestamp.UnixMilli(),
+		timestamp.Format("02/01/2006 15:04:05.000"),
+		err.Error(),
+	)
+
+	if _, errWrite := file.WriteString(logEntry); errWrite != nil {
+		fmt.Println("Failed to write to log file:", errWrite)
+	}
+}
+
+func LocalError(code int, msg string) *Error {
+	return newError(true, 0, code, msg)
 }
 
 type BinanceErrorResponse struct {
@@ -69,16 +100,7 @@ func BinanceError(resp *Response) (BinanceError *Error, UnmarshallError *Error) 
 			LocalError(ERROR_PROCESSING_ERR, unmarshallErr.Error())
 	}
 
-	err := &Error{
-		IsLocalError: false,
-		StatusCode:   resp.StatusCode,
-		Code:         errResponse.Code,
-		Message:      errResponse.Msg,
-	}
-
-	if PRINT_ERRORS {
-		fmt.Println(err.Error())
-	}
+	err := newError(false, resp.StatusCode, errResponse.Code, errResponse.Msg)
 
 	return err, nil
 }
