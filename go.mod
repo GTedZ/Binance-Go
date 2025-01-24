@@ -1,4 +1,4 @@
-module github.com/GTedZ/Binance-Go/v2
+module github.com/GTedZ/Binance-Go
 
 go 1.23.4
 
