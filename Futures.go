@@ -168,8 +168,6 @@ func (symbol *Futures_Symbol) UnmarshalJSON(data []byte) error {
 		case FUTURES_Constants.SymbolFilterTypes.PERCENT_PRICE:
 			symbol.Filters.PERCENT_PRICE = &Futures_SymbolFilter_PERCENT_PRICE{}
 			err = json.Unmarshal(filter, &symbol.Filters.PERCENT_PRICE)
-			fmt.Println(tempObj)
-			fmt.Println(symbol.Filters.PERCENT_PRICE)
 
 		case FUTURES_Constants.SymbolFilterTypes.MIN_NOTIONAL:
 			symbol.Filters.MIN_NOTIONAL = &Futures_SymbolFilter_MIN_NOTIONAL{}
