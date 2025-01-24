@@ -158,6 +158,275 @@ func (futures_ws *Futures_Websockets) AggTrade(publicOnMessage func(aggTrade *Fu
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+type FuturesWS_MarkPrice struct {
+
+	// Event type
+	Event string `json:"e"`
+
+	// Event time
+	EventTime int64 `json:"E"`
+
+	// Symbol
+	Symbol string `json:"s"`
+
+	// Mark price
+	MarkPrice string `json:"p"`
+
+	// Index price
+	IndexPrice string `json:"i"`
+
+	// Estimated Settle Price, only useful in the last hour before the settlement starts
+	EstimatedSettlePrice string `json:"P"`
+
+	// Funding rate
+	FundingRate string `json:"r"`
+
+	// Next funding time
+	NextFundingTime int64 `json:"T"`
+}
+
+type FuturesWS_MarkPrice_Params struct {
+	Symbol string
+	IsFast bool
+}
+
+type FuturesWS_MarkPrice_Socket struct {
+	Handler *Futures_Websocket
+}
+
+func (*FuturesWS_MarkPrice_Socket) CreateStreamName(symbol string, IsFast bool) string {
+	streamName := strings.ToLower(symbol) + "@markPrice"
+	if IsFast {
+		streamName += "@1s"
+	}
+	return streamName
+}
+
+func (socket *FuturesWS_MarkPrice_Socket) Subscribe(params ...FuturesWS_MarkPrice_Params) (resp *FuturesWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(params))
+	for i := range params {
+		streams[i] = socket.CreateStreamName(params[i].Symbol, params[i].IsFast)
+	}
+
+	return socket.Handler.Subscribe(streams...)
+}
+
+func (socket *FuturesWS_MarkPrice_Socket) Unsubscribe(params ...FuturesWS_MarkPrice_Params) (resp *FuturesWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(params))
+	for i := range params {
+		streams[i] = socket.CreateStreamName(params[i].Symbol, params[i].IsFast)
+	}
+
+	return socket.Handler.Unsubscribe(streams...)
+}
+
+func (futures_ws *Futures_Websockets) MarkPrice(publicOnMessage func(markPrice *FuturesWS_MarkPrice), params ...FuturesWS_MarkPrice_Params) (*FuturesWS_MarkPrice_Socket, *Error) {
+	var newSocket FuturesWS_MarkPrice_Socket
+
+	streams := make([]string, len(params))
+	for i := range params {
+		streams[i] = newSocket.CreateStreamName(params[i].Symbol, params[i].IsFast)
+	}
+	socket, err := futures_ws.CreateSocket(streams, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var markPrice FuturesWS_MarkPrice
+		err := json.Unmarshal(msg, &markPrice)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(&markPrice)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type FuturesWS_AllMarkPrices_Socket struct {
+	Handler *Futures_Websocket
+}
+
+func (*FuturesWS_AllMarkPrices_Socket) CreateStreamName(isFast bool) string {
+	streamName := "!markPrice@arr"
+	if isFast {
+		streamName += "@1s"
+	}
+	return streamName
+}
+
+func (socket *FuturesWS_AllMarkPrices_Socket) Subscribe(isFast ...bool) (resp *FuturesWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(isFast))
+	for i := range isFast {
+		streams[i] = socket.CreateStreamName(isFast[i])
+	}
+
+	return socket.Handler.Subscribe(streams...)
+}
+
+func (socket *FuturesWS_AllMarkPrices_Socket) Unsubscribe(isFast ...bool) (resp *FuturesWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	streams := make([]string, len(isFast))
+	for i := range isFast {
+		streams[i] = socket.CreateStreamName(isFast[i])
+	}
+
+	return socket.Handler.Unsubscribe(streams...)
+}
+
+func (futures_ws *Futures_Websockets) AllMarkPrices(publicOnMessage func(markPrices []*FuturesWS_MarkPrice), isFast ...bool) (*FuturesWS_AllMarkPrices_Socket, *Error) {
+	var newSocket FuturesWS_AllMarkPrices_Socket
+
+	streams := make([]string, len(isFast))
+	for i := range isFast {
+		streams[i] = newSocket.CreateStreamName(isFast[i])
+	}
+	socket, err := futures_ws.CreateSocket(streams, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var markPrices []*FuturesWS_MarkPrice
+		err := json.Unmarshal(msg, &markPrices)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(markPrices)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type FuturesWS_BookTicker struct {
+
+	// event type
+	Event string `json:"e"`
+
+	// order book updateId
+	UpdateId int64 `json:"u"`
+
+	// event time
+	EventTime int64 `json:"E"`
+
+	// transaction time
+	TransactTime int64 `json:"T"`
+
+	// symbol
+	Symbol string `json:"s"`
+
+	// best bid price
+	Bid string `json:"b"`
+
+	// best bid qty
+	BidQty string `json:"B"`
+
+	// best ask price
+	Ask string `json:"a"`
+
+	// best ask qty
+	AskQty string `json:"A"`
+}
+
+type FuturesWS_BookTicker_Socket struct {
+	Handler *Futures_Websocket
+}
+
+func (*FuturesWS_BookTicker_Socket) CreateStreamName(symbol ...string) []string {
+	for i := range symbol {
+		symbol[i] += "@bookTicker"
+	}
+	return symbol
+}
+
+func (socket *FuturesWS_BookTicker_Socket) Subscribe(symbol ...string) (resp *FuturesWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	symbol = socket.CreateStreamName(symbol...)
+	return socket.Handler.Subscribe(symbol...)
+}
+
+func (socket *FuturesWS_BookTicker_Socket) Unsubscribe(symbol ...string) (resp *FuturesWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	symbol = socket.CreateStreamName(symbol...)
+	return socket.Handler.Unsubscribe(symbol...)
+}
+
+func (futures_ws *Futures_Websockets) BookTicker(publicOnMessage func(bookTicker *FuturesWS_BookTicker), symbol ...string) (*FuturesWS_BookTicker_Socket, *Error) {
+	var newSocket FuturesWS_BookTicker_Socket
+
+	symbol = newSocket.CreateStreamName(symbol...)
+	socket, err := futures_ws.CreateSocket(symbol, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var bookTicker FuturesWS_BookTicker
+		err := json.Unmarshal(msg, &bookTicker)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(&bookTicker)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type FuturesWS_AllBookTickers_Socket struct {
+	Handler *Futures_Websocket
+}
+
+func (*FuturesWS_AllBookTickers_Socket) CreateStreamName() string {
+	return "!bookTicker"
+}
+
+func (socket *FuturesWS_AllBookTickers_Socket) Subscribe() (resp *FuturesWS_Subscribe_Response, hasTimedOut bool, err *Error) {
+	streamName := socket.CreateStreamName()
+	return socket.Handler.Subscribe(streamName)
+}
+
+func (socket *FuturesWS_AllBookTickers_Socket) Unsubscribe() (resp *FuturesWS_Unsubscribe_Response, hasTimedOut bool, err *Error) {
+	streamName := socket.CreateStreamName()
+	return socket.Handler.Unsubscribe(streamName)
+}
+
+func (futures_ws *Futures_Websockets) AllBookTickers(publicOnMessage func(bookTickers []*FuturesWS_BookTicker)) (*FuturesWS_AllBookTickers_Socket, *Error) {
+	var newSocket FuturesWS_AllBookTickers_Socket
+
+	streamName := newSocket.CreateStreamName()
+	socket, err := futures_ws.CreateSocket([]string{streamName}, false)
+	if err != nil {
+		return nil, err
+	}
+
+	socket.Websocket.OnMessage = func(messageType int, msg []byte) {
+		var bookTickers []*FuturesWS_BookTicker
+		err := json.Unmarshal(msg, &bookTickers)
+		if err != nil {
+			LocalError(PARSING_ERROR, err.Error())
+			return
+		}
+		publicOnMessage(bookTickers)
+	}
+
+	newSocket.Handler = socket
+	return &newSocket, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 type FuturesWS_ContractInfo struct {
 
 	// Event Type
