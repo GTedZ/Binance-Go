@@ -1197,28 +1197,6 @@ func (spot_ws *Spot_Websockets) DiffBookDepth(publicOnMessage func(diffBookDepth
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SpotWS_ManagedOrderBook_Handler struct {
-	Socket    *SpotWS_DiffBookDepth_Socket
-	OrderBook *Spot_OrderBook
-
-	isBuffering bool
-	buffer      []*SpotWS_DiffBookDepth
-}
-
-// # This is a library implementation of a managed order book
-//
-// # IMPORTANT: The returned value is a pointer to an order book struct, DO NOT alter any internal property
-//
-// # Initial request weight usage: 250
-func (ws_spot *Spot_Websockets) ManagedOrderBook(OnMessage func(), Symbol string, IsFast bool) *Error {
-	// var handler SpotWS_ManagedOrderBook_Handler
-
-	// Asks: lowest to highest
-	// Bids: highest to lowest
-
-	return nil
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
