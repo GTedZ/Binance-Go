@@ -1,5 +1,9 @@
 package Binance
 
+import (
+	"fmt"
+)
+
 var SPOT_Constants = struct {
 	URLs                [6]string
 	URL_Data_Only       string
@@ -420,6 +424,30 @@ type Spot_Symbol struct {
 	PermissionSets                  [][]string `json:"permissionSets"`
 	DefaultSelfTradePreventionMode  string     `json:"defaultSelfTradePreventionMode"`
 	AllowedSelfTradePreventionModes []string   `json:"allowedSelfTradePreventionModes"`
+}
+
+// # Truncates a price string to the last significant digit
+//
+// Symbol Filters rule "PRICE_FILTER" defines the highest precision the symbol accepts
+// i.e: BTCUSDT has a precision of 2, meaning if you want to buy BTCUSDT at "123_456.7891",
+// it would be truncated down to "123_456.78"
+func (spotSymbol *Spot_Symbol) TruncPrice_float64(price float64) string {
+	return spotSymbol.TruncPrice(fmt.Sprint(price))
+}
+
+// # Truncates a price string to the last significant digit
+//
+// Symbol Filters rule "PRICE_FILTER" defines the highest precision the symbol accepts
+// i.e: BTCUSDT has a precision of 2, meaning if you want to buy BTCUSDT at "123_456.7891",
+// it would be truncated down to "123_456.78"
+func (spotSymbol *Spot_Symbol) TruncPrice(priceStr string) string {
+	if spotSymbol.Filters.PRICE_FILTER == nil || spotSymbol.Filters.PRICE_FILTER.TickSize == "" {
+		return priceStr
+	}
+
+	// utils := Utils{}
+
+	return ""
 }
 
 type Spot_SymbolFilters struct {
