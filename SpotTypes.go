@@ -445,9 +445,7 @@ func (spotSymbol *Spot_Symbol) TruncPrice(priceStr string) string {
 		return priceStr
 	}
 
-	// utils := Utils{}
-
-	return ""
+	return FormatTickSize(priceStr, spotSymbol.Filters.PRICE_FILTER.TickSize)
 }
 
 type Spot_SymbolFilters struct {

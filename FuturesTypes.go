@@ -370,7 +370,7 @@ func (spotSymbol *Futures_Symbol) TruncPrice(priceStr string) string {
 		return priceStr
 	}
 
-	return ""
+	return FormatTickSize(priceStr, spotSymbol.Filters.PRICE_FILTER.TickSize)
 }
 
 type Futures_SymbolFilters struct {
