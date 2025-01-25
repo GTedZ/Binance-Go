@@ -7,11 +7,9 @@ import (
 	"reflect"
 )
 
-type BinaryUtils struct{}
-
 // Serializes any number into binary format
 // Accepts any type (int, uint, float) and any size (8, 16, 32, 64)
-func (utils *BinaryUtils) SerializeNumber(value interface{}) ([]byte, error) {
+func SerializeNumber(value interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.LittleEndian, value)
 	if err != nil {
@@ -22,7 +20,7 @@ func (utils *BinaryUtils) SerializeNumber(value interface{}) ([]byte, error) {
 
 // Deserializes any number into binary format
 // Accepts any type (int, uint, float) and any size (8, 16, 32, 64)
-func (utils *BinaryUtils) DeserializeNumber(data []byte, value interface{}) error {
+func DeserializeNumber(data []byte, value interface{}) error {
 	buf := bytes.NewReader(data)
 	err := binary.Read(buf, binary.LittleEndian, value)
 	if err != nil {
@@ -32,7 +30,7 @@ func (utils *BinaryUtils) DeserializeNumber(data []byte, value interface{}) erro
 }
 
 // Serialize a string from string to binary format
-func (utils *BinaryUtils) SerializeString(value string) ([]byte, error) {
+func SerializeString(value string) ([]byte, error) {
 	length := int32(len(value))
 	buf := new(bytes.Buffer)
 	// Write the length of the string first
@@ -49,7 +47,7 @@ func (utils *BinaryUtils) SerializeString(value string) ([]byte, error) {
 }
 
 // Deserialize a string from binary to string format
-func (utils *BinaryUtils) DeserializeString(data []byte) (string, error) {
+func DeserializeString(data []byte) (string, error) {
 	buf := bytes.NewReader(data)
 	var length int32
 	err := binary.Read(buf, binary.LittleEndian, &length)

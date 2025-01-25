@@ -6,9 +6,6 @@ type Binance struct {
 
 	API APIKEYS
 
-	BinaryUtils BinaryUtils
-	Utils       Utils
-
 	Spot    Spot
 	Futures Futures
 }

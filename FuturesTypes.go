@@ -1,5 +1,7 @@
 package Binance
 
+import "fmt"
+
 var FUTURES_Constants = struct {
 	URLs [1]string
 
@@ -347,6 +349,28 @@ type Futures_Symbol struct {
 	TimeInForce           []string `json:"timeInForce"`
 	LiquidationFee        string   `json:"liquidationFee"`
 	MarketTakeBound       string   `json:"marketTakeBound"`
+}
+
+// # Truncates a price string to the last significant digit
+//
+// Symbol Filters rule "PRICE_FILTER" defines the highest precision the symbol accepts
+// i.e: BTCUSDT has a precision of 2, meaning if you want to buy BTCUSDT at "123_456.7891",
+// it would be truncated down to "123_456.78"
+func (spotSymbol *Futures_Symbol) TruncPrice_float64(price float64) string {
+	return spotSymbol.TruncPrice(fmt.Sprint(price))
+}
+
+// # Truncates a price string to the last significant digit
+//
+// Symbol Filters rule "PRICE_FILTER" defines the highest precision the symbol accepts
+// i.e: BTCUSDT has a precision of 2, meaning if you want to buy BTCUSDT at "123_456.7891",
+// it would be truncated down to "123_456.78"
+func (spotSymbol *Futures_Symbol) TruncPrice(priceStr string) string {
+	if spotSymbol.Filters.PRICE_FILTER == nil || spotSymbol.Filters.PRICE_FILTER.TickSize == "" {
+		return priceStr
+	}
+
+	return ""
 }
 
 type Futures_SymbolFilters struct {

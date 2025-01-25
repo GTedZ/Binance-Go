@@ -5,17 +5,15 @@ import (
 	"strings"
 )
 
-type Utils struct{}
-
-func (*Utils) ParseInt(intStr string) (int64, error) {
+func ParseInt(intStr string) (int64, error) {
 	return strconv.ParseInt(intStr, 10, 64)
 }
 
-func (*Utils) ParseFloat(floatStr string) (float64, error) {
+func ParseFloat(floatStr string) (float64, error) {
 	return strconv.ParseFloat(floatStr, 64)
 }
 
-func (*Utils) DetectDotNumIndexes(numStr string) (dotIndex int, numIndex int) {
+func DetectDotNumIndexes(numStr string) (dotIndex int, numIndex int) {
 	dotIndex = -1
 	numIndex = -1
 	for i, char := range numStr {
@@ -31,13 +29,13 @@ func (*Utils) DetectDotNumIndexes(numStr string) (dotIndex int, numIndex int) {
 	return dotIndex, numIndex
 }
 
-func (utils *Utils) FormatTickSize(priceStr string, tickSize string) string {
-	_, numIndex := utils.DetectDotNumIndexes(tickSize)
+func FormatTickSize(priceStr string, tickSize string) string {
+	_, numIndex := DetectDotNumIndexes(tickSize)
 	if numIndex == -1 {
 		return "0"
 	}
 
-	tickSize_dotIndex, tickSize_numIndex := utils.DetectDotNumIndexes(tickSize)
+	tickSize_dotIndex, tickSize_numIndex := DetectDotNumIndexes(tickSize)
 	if tickSize_numIndex == -1 {
 		return priceStr
 	}
@@ -54,10 +52,10 @@ func (utils *Utils) FormatTickSize(priceStr string, tickSize string) string {
 		precision++
 	}
 
-	return utils.TruncPriceStr(priceStr, precision)
+	return TruncPriceStr(priceStr, precision)
 }
 
-func (utils *Utils) TruncPriceStr(priceStr string, precision int) string {
+func TruncPriceStr(priceStr string, precision int) string {
 	if precision == 0 {
 		return strings.Split(priceStr, ".")[0]
 	}
@@ -74,7 +72,7 @@ func (utils *Utils) TruncPriceStr(priceStr string, precision int) string {
 
 		return priceStr[:endIndex] + strings.Repeat("0", abs_precision)
 	} else {
-		dotIndex, _ := utils.DetectDotNumIndexes(priceStr)
+		dotIndex, _ := DetectDotNumIndexes(priceStr)
 		if dotIndex == -1 {
 			return priceStr + "." + strings.Repeat("0", precision)
 		}
