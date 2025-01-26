@@ -220,9 +220,7 @@ func (exchangeInfo *Spot_ExchangeInfo) UnmarshalJSON(data []byte) error {
 	for _, filter := range aux.Filters {
 		var tempObj map[string]interface{}
 		if err := json.Unmarshal(filter, &tempObj); err != nil {
-			if VERBOSE {
-				fmt.Println("Error unmarshalling into temp map:", err)
-			}
+			LOG_ERRORS("Error unmarshalling into temp map:", err)
 			continue
 		}
 
@@ -239,14 +237,10 @@ func (exchangeInfo *Spot_ExchangeInfo) UnmarshalJSON(data []byte) error {
 			exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ICEBERG_ORDERS = &Spot_ExchangeFilter_EXCHANGE_MAX_NUM_ICEBERG_ORDERS{}
 			err = json.Unmarshal(filter, &exchangeInfo.ExchangeFilters.EXCHANGE_MAX_NUM_ICEBERG_ORDERS)
 		default:
-			if VERBOSE {
-				fmt.Println("A missing field was intercepted of value", tempObj["filterType"], "in exchangeInfo.")
-			}
+			LOG_ERRORS("A missing field was intercepted of value", tempObj["filterType"], "in exchangeInfo.")
 		}
 		if err != nil {
-			if VERBOSE {
-				fmt.Println("There was an error parsing", tempObj["filterType"], "in exchangeInfo =>", err)
-			}
+			LOG_ERRORS("There was an error parsing", tempObj["filterType"], "in exchangeInfo =>", err)
 		}
 
 	}
@@ -274,9 +268,7 @@ func (symbol *Spot_Symbol) UnmarshalJSON(data []byte) error {
 	for _, filter := range aux.Filters {
 		var tempObj map[string]interface{}
 		if err := json.Unmarshal(filter, &tempObj); err != nil {
-			if VERBOSE {
-				fmt.Println("Error unmarshalling into temp map:", err)
-			}
+			LOG_ERRORS("Error unmarshalling into temp map:", err)
 			continue
 		}
 
@@ -333,14 +325,10 @@ func (symbol *Spot_Symbol) UnmarshalJSON(data []byte) error {
 			symbol.Filters.TRAILING_DELTA = &Spot_SymbolFilter_TRAILING_DELTA{}
 			err = json.Unmarshal(filter, &symbol.Filters.TRAILING_DELTA)
 		default:
-			if VERBOSE {
-				fmt.Println("A missing field was intercepted of value", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info.")
-			}
+			LOG_ERRORS("A missing field was intercepted of value", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info.")
 		}
 		if err != nil {
-			if VERBOSE {
-				fmt.Println("There was an error parsing", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info =>", err)
-			}
+			LOG_ERRORS("There was an error parsing", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info =>", err)
 		}
 
 	}

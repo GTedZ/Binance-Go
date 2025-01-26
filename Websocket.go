@@ -59,12 +59,9 @@ func CreateSocket(baseURL string, streams []string, isCombined bool) (*Websocket
 
 	fullStreamStr := baseURL + queryStr
 
-	LOG_WS_VERBOSE_FULL("Connecting Websocket to:", fullStreamStr)
-
 	conn, _, err := ws.DefaultDialer.Dial(fullStreamStr, nil)
 	if err != nil {
-		LOG_WS_VERBOSE("There was an error creating websocket:", err)
-
+		LOG_WS_ERRORS("There was an error creating websocket:", err)
 		return nil, LocalError(WS_OPEN_ERR, err.Error())
 	}
 
@@ -113,7 +110,7 @@ func setUpSocket(websocket *Websocket, conn *ws.Conn) {
 			}
 			msgType, msg, err := conn.ReadMessage()
 			if err != nil {
-				LOG_WS_VERBOSE("Error reading message:", err)
+				LOG_WS_ERRORS("Error reading message:", err)
 
 				if current_subSocketID != websocket.subsocket_id {
 					return
@@ -121,9 +118,7 @@ func setUpSocket(websocket *Websocket, conn *ws.Conn) {
 				time.Sleep(500 * time.Millisecond)
 				continue
 			}
-			if WS_PRINT_MESSAGES {
-				fmt.Printf("Type: %d, message: %s\n", msgType, string(msg))
-			}
+			LOG_WS_MESSAGES(fmt.Sprintf("Type: %d, message: %s\n", msgType, string(msg)))
 
 			websocket.RecordLastHeartbeat()
 
@@ -145,7 +140,7 @@ func setUpSocket(websocket *Websocket, conn *ws.Conn) {
 				var tempData CombinedStream_MSG
 				err := json.Unmarshal(msg, &tempData)
 				if err != nil {
-					fmt.Println("ERR PARSING COMBINED MESSAGE!!!")
+					LOG_WS_ERRORS("ERR PARSING COMBINED MESSAGE!!!")
 					panic(fmt.Sprintln(LocalError(PARSING_ERROR, err.Error()).Error()))
 				}
 				msg = tempData.Data
@@ -190,7 +185,7 @@ func setUpSocket(websocket *Websocket, conn *ws.Conn) {
 			if elapsed >= Constants.Websocket.HEARTBEAT_CHECK_INTERVAL_SEC {
 				err := websocket.Conn.WriteMessage(ws.PingMessage, nil)
 				if err != nil {
-					LOG_WS_VERBOSE("[HEARTBEAT] Error sending ping:", err)
+					LOG_WS_ERRORS("[HEARTBEAT] Error sending ping:", err)
 
 				} else {
 					LOG_WS_VERBOSE_FULL("[HEARTBEAT] Ping sent.")
@@ -248,11 +243,11 @@ func (websocket *Websocket) Reconnect() {
 	websocket.isReconnecting = true
 	websocket.subsocket_id++
 
-	fmt.Println("[*Websocket.RECONNECT()] Reconnecting socket, closed:", websocket.closed)
+	LOG_WS_VERBOSE("[*Websocket.RECONNECT()] Reconnecting socket, closed:", websocket.closed)
 	if !websocket.closed {
 		err := websocket.silentCloseSocket()
 		if err != nil {
-			fmt.Println("[*Websocket.RECONNECT()] [SilentClose] There was an error silent closing the socket.")
+			LOG_WS_ERRORS("[*Websocket.RECONNECT()] [SilentClose] There was an error silent closing the socket.")
 		}
 	}
 
@@ -264,7 +259,7 @@ func (websocket *Websocket) Reconnect() {
 		queryStr := CreateQueryStringWS(websocket.Streams, websocket.IsCombined)
 		conn, _, err := ws.DefaultDialer.Dial(websocket.BaseURL+queryStr, nil)
 		if err != nil {
-			LOG_WS_VERBOSE("There was an error reconnecting socket:", err)
+			LOG_WS_ERRORS("There was an error reconnecting socket:", err)
 
 			time.Sleep(500 * time.Millisecond)
 			continue // Retry until successful
@@ -284,14 +279,14 @@ func (websocket *Websocket) Reconnect() {
 		websocket.OnReconnect()
 	}
 
-	LOG_WS_VERBOSE_FULL("[*Websocket.RECONNECT()] Successfully reconnected the socket!!!")
+	LOG_WS_VERBOSE("[*Websocket.RECONNECT()] Successfully reconnected the socket.")
 }
 
 // This terminates the socket indefinitely
 func (websocket *Websocket) Close() error {
 	websocket.reconnect = false
 
-	LOG_WS_VERBOSE_FULL("[*Websocket.CLOSE()] Forcefully closing socket indefinitely, closed:", websocket.closed)
+	LOG_WS_VERBOSE("[*Websocket.CLOSE()] Forcefully closing socket indefinitely, closed:", websocket.closed)
 
 	if !websocket.closed {
 		err := websocket.silentCloseSocket()
@@ -305,7 +300,7 @@ func (websocket *Websocket) Close() error {
 }
 
 func (websocket *Websocket) silentCloseSocket() error {
-	fmt.Println("[*Websocket.silentClose()] Forcefully closing socket, closed:", websocket.closed)
+	LOG_WS_VERBOSE("[*Websocket.silentClose()] Forcefully closing socket, closed:", websocket.closed)
 	err := websocket.Conn.Close()
 	if err != nil {
 		fmt.Println("[*Websocket.silentClose()] There was an error closing the socket:", err)
@@ -316,7 +311,7 @@ func (websocket *Websocket) silentCloseSocket() error {
 }
 
 func (websocket *Websocket) CloseHandler(code int, text string) error {
-	fmt.Println("[*Websocket.CloseHandler()] code", code, "text", text, "is closed", websocket.closed)
+	LOG_WS_VERBOSE("[*Websocket.CloseHandler()] code", code, "text", text, "is closed", websocket.closed)
 	websocket.closed = true
 
 	if websocket.reconnect {
@@ -338,7 +333,7 @@ func (websocket *Websocket) PingHandler(appData string) error {
 
 	err := websocket.Conn.WriteMessage(ws.PongMessage, []byte(appData))
 	if err != nil {
-		LOG_WS_VERBOSE("Error sending Pong:", err)
+		LOG_WS_ERRORS("Error sending Pong:", err)
 
 		return err
 	}
@@ -366,16 +361,4 @@ func (websocket *Websocket) PongHandler(appData string) error {
 
 func (websocket *Websocket) RecordLastHeartbeat() {
 	websocket.Last_Heartbeat_Timestamp = time.Now().Unix()
-}
-
-func LOG_WS_VERBOSE(a ...any) {
-	if WS_VERBOSE {
-		fmt.Println(a...)
-	}
-}
-
-func LOG_WS_VERBOSE_FULL(a ...any) {
-	if WS_VERBOSE_FULL {
-		fmt.Println(a...)
-	}
 }

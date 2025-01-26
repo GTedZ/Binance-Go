@@ -138,9 +138,7 @@ func (symbol *Futures_Symbol) UnmarshalJSON(data []byte) error {
 	for _, filter := range aux.Filters {
 		var tempObj map[string]interface{}
 		if err := json.Unmarshal(filter, &tempObj); err != nil {
-			if VERBOSE {
-				fmt.Println("Error unmarshalling into temp map:", err)
-			}
+			LOG_ERRORS("Error unmarshalling into temp map:", err)
 			continue
 		}
 
@@ -173,14 +171,10 @@ func (symbol *Futures_Symbol) UnmarshalJSON(data []byte) error {
 			symbol.Filters.MIN_NOTIONAL = &Futures_SymbolFilter_MIN_NOTIONAL{}
 			err = json.Unmarshal(filter, &symbol.Filters.MIN_NOTIONAL)
 		default:
-			if VERBOSE {
-				fmt.Println("A missing field was intercepted of value", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info.")
-			}
+			LOG_ERRORS("A missing field was intercepted of value", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info.")
 		}
 		if err != nil {
-			if VERBOSE {
-				fmt.Println("There was an error parsing", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info =>", err)
-			}
+			LOG_ERRORS("There was an error parsing", tempObj["filterType"], "in the", symbol.Symbol, "symbol's info =>", err)
 		}
 
 	}

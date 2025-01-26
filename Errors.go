@@ -2,9 +2,7 @@ package Binance
 
 import (
 	"fmt"
-	"os"
 	"strconv"
-	"time"
 )
 
 type Error struct {
@@ -48,36 +46,34 @@ func newError(isLocal bool, statusCode int, code int, message string) *Error {
 		Message:      message,
 	}
 
-	if PRINT_ERRORS {
-		fmt.Println(err.Error())
-	}
+	LOG_ALL_ERRORS(err.Error())
 
-	if LOG_ERRORS && LOG_ERRORS_FILE != "" {
-		logErrorToFile(err)
-	}
+	// if LOG_ERRORS && LOG_ERRORS_FILE != "" {
+	// 	logErrorToFile(err)
+	// }
 
 	return err
 }
 
-func logErrorToFile(err *Error) {
-	file, errOpen := os.OpenFile(LOG_ERRORS_FILE, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if errOpen != nil {
-		fmt.Println("Failed to open log file:", errOpen)
-		return
-	}
-	defer file.Close()
+// func logErrorToFile(err *Error) {
+// 	file, errOpen := os.OpenFile(LOG_ERRORS_FILE, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+// 	if errOpen != nil {
+// 		fmt.Println("Failed to open log file:", errOpen)
+// 		return
+// 	}
+// 	defer file.Close()
 
-	timestamp := time.Now()
-	logEntry := fmt.Sprintf("%d - %s: %s\n",
-		timestamp.UnixMilli(),
-		timestamp.Format("02/01/2006 15:04:05.000"),
-		err.Error(),
-	)
+// 	timestamp := time.Now()
+// 	logEntry := fmt.Sprintf("%d - %s: %s\n",
+// 		timestamp.UnixMilli(),
+// 		timestamp.Format("02/01/2006 15:04:05.000"),
+// 		err.Error(),
+// 	)
 
-	if _, errWrite := file.WriteString(logEntry); errWrite != nil {
-		fmt.Println("Failed to write to log file:", errWrite)
-	}
-}
+// 	if _, errWrite := file.WriteString(logEntry); errWrite != nil {
+// 		fmt.Println("Failed to write to log file:", errWrite)
+// 	}
+// }
 
 func LocalError(code int, msg string) *Error {
 	return newError(true, 0, code, msg)

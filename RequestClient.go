@@ -108,10 +108,8 @@ func (resp *Response) GetUsedWeight(interval string) (int64, *Error) {
 
 	if strValue == "" {
 		errStr := "No Used Weight was found for this interval"
-		if PRINT_ERRORS {
-			fmt.Println(errStr)
-		}
-		return 0, LocalError(RESPONSE_HEADER_NOT_FOUND, "")
+		LOG_ERRORS(errStr)
+		return 0, LocalError(RESPONSE_HEADER_NOT_FOUND, errStr)
 	}
 
 	// Parses the value to int64
@@ -131,10 +129,8 @@ func (resp *Response) GetRequestTime() (time.Time, *Error) {
 
 	if strValue == "" {
 		errStr := "No Date header was found for this request"
-		if PRINT_ERRORS {
-			fmt.Println(errStr)
-		}
-		return time.Now(), LocalError(RESPONSE_HEADER_NOT_FOUND, "")
+		LOG_ERRORS(errStr)
+		return time.Now(), LocalError(RESPONSE_HEADER_NOT_FOUND, errStr)
 	}
 
 	parsedTime, err := time.Parse(time.RFC1123, strValue)
@@ -214,9 +210,7 @@ func createQueryString(params map[string]interface{}, sorted bool) string {
 			// Encode slices as JSON arrays
 			jsonValue, err := json.Marshal(v)
 			if err != nil {
-				if VERBOSE {
-					fmt.Printf("[VERBOSE] Error marshaling slice for key %s: %v\n", key, err)
-				}
+				LOG_ERRORS(fmt.Sprintf("[VERBOSE] Error marshaling slice for key %s: %v\n", key, err))
 				return
 			}
 			query.Add(key, string(jsonValue)) // Add JSON-encoded array
@@ -232,9 +226,7 @@ func createQueryString(params map[string]interface{}, sorted bool) string {
 		case int, int64, float64, bool: // Convert basic types to string
 			query.Add(key, fmt.Sprintf("%v", v))
 		default:
-			if VERBOSE {
-				fmt.Println("[VERBOSE] Error adding parameter, invalid type detected: received:", v)
-			}
+			LOG_ERRORS("[VERBOSE] Error adding parameter, invalid type detected: received:", v)
 		}
 	}
 
@@ -264,33 +256,24 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 		panic(fmt.Sprintf("Method passed to Unsigned Request function is invalid, received: '%s'\nSupported methods are ('%s', '%s', '%s', '%s', '%s')", method, Constants.Methods.GET, Constants.Methods.POST, Constants.Methods.PUT, Constants.Methods.PATCH, Constants.Methods.DELETE))
 	}
 	if err != nil {
-		if PRINT_ERRORS {
-			fmt.Println("[VERBOSE] Request error:", err)
-		}
+		LOG_ERRORS("[VERBOSE] Request error:", err)
 		return nil, LocalError(HTTP_REQUEST_ERR, err.Error())
 	}
 	defer rawResponse.Body.Close()
 
 	resp, err := readResponseBody(rawResponse)
 	if err != nil {
-		if PRINT_ERRORS {
-			fmt.Println("[VERBOSE] Error reading response body:", err)
-		}
+		LOG_ERRORS("[VERBOSE] Error reading response body:", err)
 		return nil, LocalError(RESPONSEBODY_READING_ERR, err.Error())
 	}
 
-	if PRINT_HTTP_RESPONSES {
-		fmt.Printf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body))
-	} else if PRINT_HTTP_QUERIES {
-		fmt.Printf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery)
-	}
+	LOG_HTTP_QUERIES(fmt.Sprintf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery))
+	LOG_HTTP_RESPONSES(fmt.Sprintf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body)))
 
 	if resp.StatusCode >= 400 {
 		Err, UnmarshallErr := BinanceError(resp)
 		if UnmarshallErr != nil {
-			if PRINT_ERRORS {
-				fmt.Println("[VERBOSE] Error processing error response body:", UnmarshallErr)
-			}
+			LOG_ERRORS("[VERBOSE] Error processing error response body:", UnmarshallErr)
 			return nil, UnmarshallErr
 		}
 
@@ -315,9 +298,7 @@ func (requestClient *RequestClient) APIKEY_only(method string, baseURL string, U
 
 	rawResponse, err := requestClient.client.Do(req)
 	if err != nil {
-		if PRINT_ERRORS {
-			fmt.Println("[VERBOSE] Request error:", err)
-		}
+		LOG_ERRORS("[VERBOSE] Request error:", err)
 		Err := Error{
 			IsLocalError: true,
 			Code:         HTTP_REQUEST_ERR,
@@ -329,9 +310,7 @@ func (requestClient *RequestClient) APIKEY_only(method string, baseURL string, U
 
 	resp, err := readResponseBody(rawResponse)
 	if err != nil {
-		if PRINT_ERRORS {
-			fmt.Println("[VERBOSE] Error reading response body:", err)
-		}
+		LOG_ERRORS("[VERBOSE] Error reading response body:", err)
 		Err := Error{
 			IsLocalError: true,
 			Code:         RESPONSEBODY_READING_ERR,
@@ -340,18 +319,13 @@ func (requestClient *RequestClient) APIKEY_only(method string, baseURL string, U
 		return nil, &Err
 	}
 
-	if PRINT_HTTP_RESPONSES {
-		fmt.Printf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body))
-	} else if PRINT_HTTP_QUERIES {
-		fmt.Printf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery)
-	}
+	LOG_HTTP_QUERIES(fmt.Sprintf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery))
+	LOG_HTTP_RESPONSES(fmt.Sprintf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body)))
 
 	if resp.StatusCode >= 400 {
 		Err, UnmarshallErr := BinanceError(resp)
 		if UnmarshallErr != nil {
-			if PRINT_ERRORS {
-				fmt.Println("[VERBOSE] Error processing error response body:", UnmarshallErr)
-			}
+			LOG_ERRORS("[VERBOSE] Error processing error response body:", UnmarshallErr)
 			return nil, UnmarshallErr
 		}
 
@@ -390,43 +364,34 @@ func (requestClient *RequestClient) Signed(method string, baseURL string, URL st
 
 	rawResponse, err := requestClient.client.Do(req)
 	if err != nil {
-		if PRINT_ERRORS {
-			fmt.Println("[VERBOSE] Request error:", err)
-		}
 		Err := Error{
 			IsLocalError: true,
 			Code:         HTTP_REQUEST_ERR,
 			Message:      err.Error(),
 		}
+		LOG_ERRORS("[VERBOSE] Request error:", Err.Error())
 		return nil, &Err
 	}
 	defer rawResponse.Body.Close()
 
 	resp, err := readResponseBody(rawResponse)
 	if err != nil {
-		if PRINT_ERRORS {
-			fmt.Println("[VERBOSE] Error reading response body:", err)
-		}
 		Err := Error{
 			IsLocalError: true,
 			Code:         RESPONSEBODY_READING_ERR,
 			Message:      err.Error(),
 		}
+		LOG_ERRORS("[VERBOSE] Error reading response body:", Err.Error())
 		return nil, &Err
 	}
 
-	if PRINT_HTTP_RESPONSES {
-		fmt.Printf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body))
-	} else if PRINT_HTTP_QUERIES {
-		fmt.Printf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery)
-	}
+	LOG_HTTP_RESPONSES(fmt.Sprintf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body)))
+	LOG_HTTP_QUERIES(fmt.Sprintf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery))
 
 	if resp.StatusCode >= 400 {
 		Err, UnmarshallErr := BinanceError(resp)
 		if UnmarshallErr != nil {
-			if PRINT_ERRORS {
-				fmt.Println("[VERBOSE] Error processing error response body:", UnmarshallErr)
-			}
+			LOG_ERRORS("[VERBOSE] Error processing error response body:", UnmarshallErr.Error())
 			return nil, UnmarshallErr
 		}
 
