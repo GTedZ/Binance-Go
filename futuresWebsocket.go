@@ -344,7 +344,7 @@ type FuturesWS_BookTicker_Socket struct {
 
 func (*FuturesWS_BookTicker_Socket) CreateStreamName(symbol ...string) []string {
 	for i := range symbol {
-		symbol[i] += "@bookTicker"
+		symbol[i] = strings.ToLower(symbol[i]) + "@bookTicker"
 	}
 	return symbol
 }
