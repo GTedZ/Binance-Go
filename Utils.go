@@ -1,6 +1,7 @@
 package Binance
 
 import (
+	"math"
 	"strconv"
 	"strings"
 )
@@ -29,7 +30,7 @@ func DetectDotNumIndexes(numStr string) (dotIndex int, numIndex int) {
 	return dotIndex, numIndex
 }
 
-func FormatTickSize(priceStr string, tickSize string) string {
+func Format_TickSize_str(priceStr string, tickSize string) string {
 	_, numIndex := DetectDotNumIndexes(tickSize)
 	if numIndex == -1 {
 		return "0"
@@ -52,10 +53,10 @@ func FormatTickSize(priceStr string, tickSize string) string {
 		precision++
 	}
 
-	return TruncPriceStr(priceStr, precision)
+	return Round_priceStr(priceStr, precision)
 }
 
-func TruncPriceStr(priceStr string, precision int) string {
+func Round_priceStr(priceStr string, precision int) string {
 	if precision == 0 {
 		return strings.Split(priceStr, ".")[0]
 	}
@@ -89,4 +90,16 @@ func TruncPriceStr(priceStr string, precision int) string {
 
 		return intStr + "." + decimalStr
 	}
+}
+
+func ToFixed_Floor(price float64, precision int) float64 {
+	return math.Floor(price*math.Pow10(precision)) / math.Pow10(precision)
+}
+
+func ToFixed_Round(price float64, precision int) float64 {
+	return math.Round(price*math.Pow10(precision)) / math.Pow10(precision)
+}
+
+func ToFixed_Ceil(price float64, precision int) float64 {
+	return math.Ceil(price*math.Pow10(precision)) / math.Pow10(precision)
 }

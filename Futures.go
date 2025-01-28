@@ -396,7 +396,7 @@ func (futures *Futures) Candlesticks(symbol string, interval string, opt_params 
 		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
-	// Convert the raw data to Spot_Candlestick slice
+	// Convert the raw data to Futures_Candlestick slice
 	candlesticks := make([]*Futures_Candlestick, len(rawCandlesticks))
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Futures_Candlestick{
@@ -462,7 +462,7 @@ func (futures *Futures) ContinuousContractCandlesticks(symbol string, contractTy
 		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
-	// Convert the raw data to Spot_Candlestick slice
+	// Convert the raw data to Futures_Candlestick slice
 	candlesticks := make([]*Futures_Candlestick, len(rawCandlesticks))
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Futures_Candlestick{
@@ -528,7 +528,7 @@ func (futures *Futures) IndexPriceCandlesticks(symbol string, interval string, o
 		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
-	// Convert the raw data to Spot_Candlestick slice
+	// Convert the raw data to Futures_Candlestick slice
 	candlesticks := make([]*Futures_PriceCandlestick, len(rawCandlesticks))
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Futures_PriceCandlestick{
@@ -587,7 +587,7 @@ func (futures *Futures) MarkPriceCandlesticks(symbol string, contractType string
 		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
-	// Convert the raw data to Spot_Candlestick slice
+	// Convert the raw data to Futures_Candlestick slice
 	candlesticks := make([]*Futures_PriceCandlestick, len(rawCandlesticks))
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Futures_PriceCandlestick{
@@ -646,7 +646,7 @@ func (futures *Futures) PremiumIndexCandlesticks(symbol string, contractType str
 		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
 	}
 
-	// Convert the raw data to Spot_Candlestick slice
+	// Convert the raw data to Futures_Candlestick slice
 	candlesticks := make([]*Futures_PriceCandlestick, len(rawCandlesticks))
 	for i, raw := range rawCandlesticks {
 		candlesticks[i] = &Futures_PriceCandlestick{
@@ -707,6 +707,265 @@ func (futures *Futures) MarkPrice(symbol ...string) ([]*Futures_MarkPrice, *Resp
 		return markPrices, resp, nil
 	}
 }
+
+/////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////
+
+// //////////////////////////// Orders \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// # DISCLAIMER
+//
+// Maybe someone will have the patience to create a unified structure for the functions
+// that is similar to the one I used for my javascript library "binance-lib" that is still performant
+// specifically in https://github.com/GTedZ/Binance-lib/blob/main/Futures/RESTful.js#L589
+func (futures *Futures) newOrder(opts map[string]interface{}) (*Futures_Order, *Response, *Error) {
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.TRADE,
+		method:       Constants.Methods.POST,
+		url:          "/fapi/v1/order",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var order *Futures_Order
+	processingErr := json.Unmarshal(resp.Body, &order)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return order, resp, nil
+}
+
+type Futures_Order_Params struct {
+	PositionSide            string `json:"positionSide"`
+	TimeInForce             string `json:"timeInForce"`
+	Quantity                string `json:"quantity"`
+	ReduceOnly              bool   `json:"reduceOnly"`
+	Price                   string `json:"price"`
+	NewClientOrderId        string `json:"newClientOrderId"`
+	StopPrice               string `json:"stopPrice"`
+	ClosePosition           string `json:"closePosition"`
+	ActivationPrice         string `json:"activationPrice"`
+	CallbackRate            string `json:"callbackRate"`
+	WorkingType             string `json:"workingType"`
+	PriceProtect            string `json:"priceProtect"`
+	NewOrderRespType        string `json:"newOrderRespType"`
+	PriceMatch              string `json:"priceMatch"`
+	SelfTradePreventionMode string `json:"selfTradePreventionMode"`
+	GoodTillDate            int64  `json:"goodTillDate"`
+	RecvWindow              int64  `json:"recvWindow"`
+}
+
+func (futures *Futures) NewOrder(symbol string, side string, Type string, opt_params ...Futures_Order_Params) (*Futures_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = Type
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.PositionSide) {
+			opts["positionSide"] = params.PositionSide
+		}
+		if IsDifferentFromDefault(params.TimeInForce) {
+			opts["timeInForce"] = params.TimeInForce
+		}
+		if IsDifferentFromDefault(params.Quantity) {
+			opts["quantity"] = params.Quantity
+		}
+		if IsDifferentFromDefault(params.ReduceOnly) {
+			opts["reduceOnly"] = params.ReduceOnly
+		}
+		if IsDifferentFromDefault(params.Price) {
+			opts["price"] = params.Price
+		}
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.StopPrice) {
+			opts["stopPrice"] = params.StopPrice
+		}
+		if IsDifferentFromDefault(params.ClosePosition) {
+			opts["closePosition"] = params.ClosePosition
+		}
+		if IsDifferentFromDefault(params.ActivationPrice) {
+			opts["activationPrice"] = params.ActivationPrice
+		}
+		if IsDifferentFromDefault(params.CallbackRate) {
+			opts["callbackRate"] = params.CallbackRate
+		}
+		if IsDifferentFromDefault(params.WorkingType) {
+			opts["workingType"] = params.WorkingType
+		}
+		if IsDifferentFromDefault(params.PriceProtect) {
+			opts["priceProtect"] = params.PriceProtect
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.PriceMatch) {
+			opts["priceMatch"] = params.PriceMatch
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.GoodTillDate) {
+			opts["goodTillDate"] = params.GoodTillDate
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return futures.newOrder(opts)
+}
+
+///////////////////////// LIMIT \\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+type Futures_LimitOrder_Params struct {
+	PositionSide            string
+	ReduceOnly              bool
+	NewClientOrderId        string
+	WorkingType             string
+	NewOrderRespType        string
+	PriceMatch              string
+	SelfTradePreventionMode string
+	GoodTillDate            int64
+	RecvWindow              int64
+}
+
+func (futures *Futures) LimitOrder(symbol string, side string, price string, quantity string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = "LIMIT"
+	opts["price"] = price
+	opts["quantity"] = quantity
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.PositionSide) {
+			opts["positionSide"] = params.PositionSide
+		}
+		if IsDifferentFromDefault(params.ReduceOnly) {
+			opts["reduceOnly"] = params.ReduceOnly
+		}
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.WorkingType) {
+			opts["workingType"] = params.WorkingType
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.PriceMatch) {
+			opts["priceMatch"] = params.PriceMatch
+			delete(opts, "price")
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.GoodTillDate) {
+			opts["goodTillDate"] = params.GoodTillDate
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return futures.newOrder(opts)
+}
+
+func (futures *Futures) LimitBuy(symbol string, price string, quantity string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
+	return futures.LimitOrder(symbol, "BUY", price, quantity, opt_params...)
+}
+
+func (futures *Futures) LimitSell(symbol string, price string, quantity string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
+	return futures.LimitOrder(symbol, "SELL", price, quantity, opt_params...)
+}
+
+///////////////////////// LIMIT ////////////////////////////
+
+///////////////////////// MARKET \\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+type Futures_MarketOrder_Params struct {
+	PositionSide            string
+	TimeInForce             string
+	ReduceOnly              bool
+	Price                   string
+	NewClientOrderId        string
+	ClosePosition           string
+	WorkingType             string
+	NewOrderRespType        string
+	SelfTradePreventionMode string
+	RecvWindow              int64
+}
+
+func (futures *Futures) MarketOrder(symbol string, side string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["side"] = side
+	opts["type"] = "MARKET"
+	opts["quantity"] = quantity
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.PositionSide) {
+			opts["positionSide"] = params.PositionSide
+		}
+		if IsDifferentFromDefault(params.TimeInForce) {
+			opts["timeInForce"] = params.TimeInForce
+		}
+		if IsDifferentFromDefault(params.ReduceOnly) {
+			opts["reduceOnly"] = params.ReduceOnly
+		}
+		if IsDifferentFromDefault(params.Price) {
+			opts["price"] = params.Price
+		}
+		if IsDifferentFromDefault(params.NewClientOrderId) {
+			opts["newClientOrderId"] = params.NewClientOrderId
+		}
+		if IsDifferentFromDefault(params.ClosePosition) {
+			opts["closePosition"] = params.ClosePosition
+		}
+		if IsDifferentFromDefault(params.WorkingType) {
+			opts["workingType"] = params.WorkingType
+		}
+		if IsDifferentFromDefault(params.NewOrderRespType) {
+			opts["newOrderRespType"] = params.NewOrderRespType
+		}
+		if IsDifferentFromDefault(params.SelfTradePreventionMode) {
+			opts["selfTradePreventionMode"] = params.SelfTradePreventionMode
+		}
+		if IsDifferentFromDefault(params.RecvWindow) {
+			opts["recvWindow"] = params.RecvWindow
+		}
+	}
+
+	return futures.newOrder(opts)
+}
+
+func (futures *Futures) MarketBuy(symbol string, side string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
+	return futures.MarketOrder(symbol, "BUY", quantity, opt_params...)
+}
+
+func (futures *Futures) MarketSell(symbol string, side string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
+	return futures.MarketOrder(symbol, "SELL", quantity, opt_params...)
+}
+
+///////////////////////// MARKET ///////////////////////////
+
+// \\\\\\\\\\\\\\\\\\\\\\\\\\\ Orders ////////////////////////////////////////
+
+// func (futures *Futures) BatchOrders(batchOrders []Futures_Order_Params) {
+
+// }
 
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////

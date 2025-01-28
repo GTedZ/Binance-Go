@@ -2,6 +2,8 @@ package Binance
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 )
 
 var SPOT_Constants = struct {
@@ -426,6 +428,200 @@ type Spot_Symbol struct {
 	AllowedSelfTradePreventionModes []string   `json:"allowedSelfTradePreventionModes"`
 }
 
+// # Checks if the price passes the "PRICE_FILTER"
+//
+// "reason" is returned on any failure, possible values are:
+//
+// - "minPrice" if the price < minPrice. 		"suggestion" will be returned with the value "minPrice".
+//
+// - "maxPrice" if the price > maxPrice. 		"suggestion" will be returned with the value "maxPrice".
+//
+// - "tickSize" if the price % tickSize != 0. 	"suggestion" will be returned with the corrected value.
+//
+// "suggestion" must be ignored if it is returned as 0.
+// "suggestion" is always returned as "price" if it passes the filter.
+func (spotSymbol *Spot_Symbol) PRICE_FILTER(price float64) (isValid bool, reason string, suggestion float64, err *Error) {
+
+	if spotSymbol.Filters.PRICE_FILTER == nil {
+		return true, "", price, nil
+	}
+
+	minPrice, parseErr := strconv.ParseFloat(spotSymbol.Filters.PRICE_FILTER.MinPrice, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+	maxPrice, parseErr := strconv.ParseFloat(spotSymbol.Filters.PRICE_FILTER.MaxPrice, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+	tickSize, parseErr := strconv.ParseFloat(spotSymbol.Filters.PRICE_FILTER.TickSize, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+
+	if minPrice != 0 && price < minPrice {
+		return false, "minPrice", minPrice, nil
+	}
+
+	if maxPrice != 0 && price > maxPrice {
+		return false, "maxPrice", maxPrice, nil
+	}
+
+	if tickSize != 0 && math.Remainder(price, tickSize) != 0 {
+		suggestion, parseErr := strconv.ParseFloat(Format_TickSize_str(fmt.Sprint(price), spotSymbol.Filters.PRICE_FILTER.TickSize), 64)
+		if parseErr != nil {
+			return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+		}
+
+		return false, "tickSize", suggestion, nil
+	}
+
+	return true, "", price, nil
+}
+
+// # Checks if the price passes the "PRICE_FILTER"
+func (spotSymbol *Spot_Symbol) PRICE_FILTER_COMPACT(price float64) (isValid bool, err *Error) {
+	isValid, _, _, err = spotSymbol.PRICE_FILTER(price)
+	return isValid, err
+}
+
+// # Checks if the quantity passes the "LOT_SIZE"
+//
+// "reason" is returned on any failure, possible values are:
+//
+// - "minQty" if the quantity < minQty. "suggestion" will be returned with the value "minQty".
+//
+// - "maxQty" if the quantity > maxQty. "suggestion" will be returned with the value "maxQty".
+//
+// - "stepSize" if the quantity % stepSize != 0. "suggestion" will be returned with the corrected value.
+//
+// "suggestion" must be ignored if it is returned as 0.
+// "suggestion" is always returned as "quantity" if it passes the filter.
+func (spotSymbol *Spot_Symbol) LOT_SIZE(quantity float64) (isValid bool, reason string, suggestion float64, err *Error) {
+
+	if spotSymbol.Filters.LOT_SIZE == nil {
+		return true, "", quantity, nil
+	}
+
+	minQty, parseErr := strconv.ParseFloat(spotSymbol.Filters.LOT_SIZE.MinQty, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+	maxQty, parseErr := strconv.ParseFloat(spotSymbol.Filters.LOT_SIZE.MaxQty, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+	stepSize, parseErr := strconv.ParseFloat(spotSymbol.Filters.LOT_SIZE.StepSize, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+
+	if minQty != 0 && quantity < minQty {
+		return false, "minQty", minQty, nil
+	}
+
+	if maxQty != 0 && quantity > maxQty {
+		return false, "maxQty", maxQty, nil
+	}
+
+	if stepSize != 0 && math.Remainder(quantity, stepSize) != 0 {
+		suggestion, parseErr := strconv.ParseFloat(Format_TickSize_str(fmt.Sprint(quantity), spotSymbol.Filters.LOT_SIZE.StepSize), 64)
+		if parseErr != nil {
+			return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+		}
+
+		return false, "stepSize", suggestion, nil
+	}
+
+	return true, "", quantity, nil
+}
+
+// # Checks if the price passes the "LOT_SIZE"
+func (spotSymbol *Spot_Symbol) LOT_SIZE_COMPACT(price float64) (isValid bool, err *Error) {
+	isValid, _, _, err = spotSymbol.LOT_SIZE(price)
+	return isValid, err
+}
+
+// # Checks if the quantity passes the "LOT_SIZE"
+//
+// "reason" is returned on any failure, possible values are:
+//
+// - "minQty" if the quantity < minQty. "suggestion" will be returned with the value "minQty".
+//
+// - "maxQty" if the quantity > maxQty. "suggestion" will be returned with the value "maxQty".
+//
+// - "stepSize" if the quantity % stepSize != 0. "suggestion" will be returned with the corrected value.
+//
+// "suggestion" must be ignored if it is returned as 0.
+// "suggestion" is always returned as "quantity" if it passes the filter.
+func (spotSymbol *Spot_Symbol) MARKET_LOT_SIZE(quantity float64) (isValid bool, reason string, suggestion float64, err *Error) {
+
+	if spotSymbol.Filters.LOT_SIZE == nil {
+		return true, "", quantity, nil
+	}
+
+	minQty, parseErr := strconv.ParseFloat(spotSymbol.Filters.MARKET_LOT_SIZE.MinQty, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+	maxQty, parseErr := strconv.ParseFloat(spotSymbol.Filters.MARKET_LOT_SIZE.MaxQty, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+	stepSize, parseErr := strconv.ParseFloat(spotSymbol.Filters.MARKET_LOT_SIZE.StepSize, 64)
+	if parseErr != nil {
+		return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+	}
+
+	if minQty != 0 && quantity < minQty {
+		return false, "minQty", minQty, nil
+	}
+
+	if maxQty != 0 && quantity > maxQty {
+		return false, "maxQty", maxQty, nil
+	}
+
+	if stepSize != 0 && math.Remainder(quantity, stepSize) != 0 {
+		suggestion, parseErr := strconv.ParseFloat(Format_TickSize_str(fmt.Sprint(quantity), spotSymbol.Filters.MARKET_LOT_SIZE.StepSize), 64)
+		if parseErr != nil {
+			return false, "", 0, LocalError(PARSING_ERROR, parseErr.Error())
+		}
+
+		return false, "stepSize", suggestion, nil
+	}
+
+	return true, "", quantity, nil
+}
+
+// # Checks if the price passes the "MARKET_LOT_SIZE"
+func (spotSymbol *Spot_Symbol) MARKET_LOT_SIZE_COMPACT(price float64) (isValid bool, err *Error) {
+	isValid, _, _, err = spotSymbol.LOT_SIZE(price)
+	return isValid, err
+}
+
+// # Truncates a price string to the last significant digit
+//
+// Symbol Filters rule "LOT_SIZE" defines the highest precision the symbol's Quantity (via base asset) accepts
+// And for MARKET orders the "MARKET_LOT_SIZE" also applies
+// i.e: BTCUSDT has a precision of 5, meaning if you want to buy "0.12345678" BTC,
+// it would be truncated down to "0.12345" BTC
+func (spotSymbol *Spot_Symbol) TruncQuantity_float64(quantity float64, IsForMarketOrder bool) string {
+	return spotSymbol.TruncQuantity(fmt.Sprint(quantity), IsForMarketOrder)
+}
+
+func (spotSymbol *Spot_Symbol) TruncQuantity(quantity string, IsForMarketOrder bool) string {
+	truncQuantity := quantity
+	if spotSymbol.Filters.LOT_SIZE != nil && spotSymbol.Filters.LOT_SIZE.StepSize != "" {
+		truncQuantity = Format_TickSize_str(truncQuantity, spotSymbol.Filters.LOT_SIZE.StepSize)
+	}
+
+	if IsForMarketOrder && spotSymbol.Filters.MARKET_LOT_SIZE != nil && spotSymbol.Filters.MARKET_LOT_SIZE.StepSize != "" {
+		truncQuantity = Format_TickSize_str(truncQuantity, spotSymbol.Filters.MARKET_LOT_SIZE.StepSize)
+	}
+
+	return truncQuantity
+}
+
 // # Truncates a price string to the last significant digit
 //
 // Symbol Filters rule "PRICE_FILTER" defines the highest precision the symbol accepts
@@ -445,7 +641,7 @@ func (spotSymbol *Spot_Symbol) TruncPrice(priceStr string) string {
 		return priceStr
 	}
 
-	return FormatTickSize(priceStr, spotSymbol.Filters.PRICE_FILTER.TickSize)
+	return Format_TickSize_str(priceStr, spotSymbol.Filters.PRICE_FILTER.TickSize)
 }
 
 type Spot_SymbolFilters struct {
