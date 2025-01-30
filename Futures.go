@@ -710,7 +710,319 @@ func (futures *Futures) MarkPrice(symbol ...string) ([]*Futures_MarkPrice, *Resp
 
 /////////////////////////////////////////////////////////////////////////////////
 
+type Futures_FundingRate_Params struct {
+	Symbol    string
+	StartTime int64
+	EndTime   int64
+	Limit     int64
+}
+
+func (futures *Futures) FundingRateHistory(opt_params ...Futures_FundingRate_Params) ([]*Futures_FundingRate, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.Symbol) {
+			opts["symbol"] = params.Symbol
+		}
+		if IsDifferentFromDefault(params.StartTime) {
+			opts["startTime"] = params.StartTime
+		}
+		if IsDifferentFromDefault(params.EndTime) {
+			opts["endTime"] = params.EndTime
+		}
+		if IsDifferentFromDefault(params.Limit) {
+			opts["limit"] = params.Limit
+		}
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/fundingRate",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var fundingRates []*Futures_FundingRate
+
+	unmarshallErr := json.Unmarshal(resp.Body, &fundingRates)
+	if unmarshallErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+	}
+
+	return fundingRates, resp, nil
+}
+
+func (futures *Futures) FundingRate() ([]*Futures_FundingRate, *Response, *Error) {
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/fundingInfo",
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var fundingRates []*Futures_FundingRate
+
+	unmarshallErr := json.Unmarshal(resp.Body, &fundingRates)
+	if unmarshallErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+	}
+
+	return fundingRates, resp, nil
+}
+
 /////////////////////////////////////////////////////////////////////////////////
+
+// If the symbol is not sent, bookTickers for all symbols will be returned in an array.
+func (futures *Futures) Ticker24h(symbol ...string) ([]*Futures_24hTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbol"] = symbol[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/ticker/24hr",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(symbol) == 0 {
+		var ticker Futures_24hTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &ticker)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return []*Futures_24hTicker{&ticker}, resp, nil
+	} else {
+		var tickers []*Futures_24hTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &tickers)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return tickers, resp, nil
+	}
+}
+
+// If the symbol is not sent, bookTickers for all symbols will be returned in an array.
+func (futures *Futures) PriceTicker_v1(symbol ...string) ([]*Futures_PriceTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbol"] = symbol[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/ticker/price",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(symbol) == 0 {
+		var priceTicker Futures_PriceTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &priceTicker)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return []*Futures_PriceTicker{&priceTicker}, resp, nil
+	} else {
+		var priceTickers []*Futures_PriceTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &priceTickers)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return priceTickers, resp, nil
+	}
+}
+
+// If the symbol is not sent, bookTickers for all symbols will be returned in an array.
+// The field X-MBX-USED-WEIGHT-1M in response header is not accurate from this endpoint, please ignore.
+func (futures *Futures) PriceTicker(symbol ...string) ([]*Futures_PriceTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbol"] = symbol[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v2/ticker/price",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(symbol) == 0 {
+		var priceTicker Futures_PriceTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &priceTicker)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return []*Futures_PriceTicker{&priceTicker}, resp, nil
+	} else {
+		var priceTickers []*Futures_PriceTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &priceTickers)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return priceTickers, resp, nil
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+// If the symbol is not sent, bookTickers for all symbols will be returned in an array.
+// The field X-MBX-USED-WEIGHT-1M in response header is not accurate from this endpoint, please ignore.
+func (futures *Futures) BookTicker(symbol ...string) ([]*Futures_BookTicker, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbol"] = symbol[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/ticker/bookTicker",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(symbol) == 0 {
+		var bookTicker Futures_BookTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &bookTicker)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return []*Futures_BookTicker{&bookTicker}, resp, nil
+	} else {
+		var bookTickers []*Futures_BookTicker
+		unmarshallErr := json.Unmarshal(resp.Body, &bookTickers)
+		if unmarshallErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+		}
+
+		return bookTickers, resp, nil
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) DeliveryPrice(pair string) ([]*Futures_DeliveryPrice, *Response, *Error) {
+	opts := make(map[string]interface{})
+	opts["pair"] = pair
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/futures/data/delivery-price",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var deliveryPrices []*Futures_DeliveryPrice
+	unmarshallErr := json.Unmarshal(resp.Body, &deliveryPrices)
+	if unmarshallErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+	}
+
+	return deliveryPrices, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) OpenInterest(symbol string) (*Futures_OpenInterest, *Response, *Error) {
+	opts := make(map[string]interface{})
+	opts["symbol"] = symbol
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/openInterest",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var openInterest *Futures_OpenInterest
+	unmarshallErr := json.Unmarshal(resp.Body, &openInterest)
+	if unmarshallErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+	}
+
+	return openInterest, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+type Futures_OpenInterestStatistics_Params struct {
+	Limit     int64
+	StartTime int64
+	EndTime   int64
+}
+
+func (futures *Futures) OpenInterestStatistics(symbol string, period string, opt_params ...Futures_OpenInterestStatistics_Params) ([]*Futures_OpenInterestStatistics, *Response, *Error) {
+	opts := make(map[string]interface{})
+	opts["symbol"] = symbol
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+		if IsDifferentFromDefault(params.Limit) {
+			opts["limit"] = params.Limit
+		}
+		if IsDifferentFromDefault(params.StartTime) {
+			opts["startTime"] = params.StartTime
+		}
+		if IsDifferentFromDefault(params.EndTime) {
+			opts["endTime"] = params.EndTime
+		}
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.NONE,
+		method:       Constants.Methods.GET,
+		url:          "/futures/data/openInterestHist",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var openInterestStatistics []*Futures_OpenInterestStatistics
+	unmarshallErr := json.Unmarshal(resp.Body, &openInterestStatistics)
+	if unmarshallErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, unmarshallErr.Error())
+	}
+
+	return openInterestStatistics, resp, nil
+}
 
 // //////////////////////////// Orders \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 

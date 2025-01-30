@@ -742,6 +742,69 @@ type Futures_MarkPrice struct {
 	Time                 int64  `json:"time"`
 }
 
+type Futures_FundingRate struct {
+	Symbol      string `json:"symbol"`
+	FundingRate string `json:"fundingRate"`
+	FundingTime int64  `json:"fundingTime"`
+	MarkPrice   string `json:"markPrice"`
+}
+
+type Futures_24hTicker struct {
+	Symbol             string `json:"symbol"`
+	PriceChange        string `json:"priceChange"`
+	PriceChangePercent string `json:"priceChangePercent"`
+	WeightedAvgPrice   string `json:"weightedAvgPrice"`
+	LastPrice          string `json:"lastPrice"`
+	LastQty            string `json:"lastQty"`
+	Open               string `json:"openPrice"`
+	High               string `json:"highPrice"`
+	Low                string `json:"lowPrice"`
+	Volume             string `json:"volume"`
+	QuoteVolume        string `json:"quoteVolume"`
+	OpenTime           int64  `json:"openTime"`
+	CloseTime          int64  `json:"closeTime"`
+	FirstId            int64  `json:"firstId"`
+	LastId             int64  `json:"lastId"`
+	Count              int64  `json:"count"`
+}
+
+type Futures_PriceTicker struct {
+	Symbol string `json:"symbol"`
+	Price  string `json:"price"`
+	Time   int64  `json:"time"`
+}
+
+type Futures_BookTicker struct {
+	Symbol   string `json:"symbol"`
+	BidPrice string `json:"bidPrice"`
+	BidQty   string `json:"bidQty"`
+	AskPrice string `json:"askPrice"`
+	AskQty   string `json:"askQty"`
+	Time     int64  `json:"time"`
+}
+
+type Futures_DeliveryPrice struct {
+	DeliveryTime  int64 `json:"deliveryTime"`
+	DeliveryPrice int64 `json:"deliveryPrice"`
+}
+
+type Futures_OpenInterest struct {
+	Symbol       string `json:"symbol"`
+	OpenInterest string `json:"openInterest"`
+	Time         int64  `json:"time"`
+}
+
+type Futures_OpenInterestStatistics struct {
+	Symbol               string `json:"symbol"`
+	SumOpenInterest      string `json:"sumOpenInterest"`
+	SumOpenInterestValue string `json:"sumOpenInterestValue"`
+	Timestamp            string `json:"timestamp"`
+}
+
+//////////////////////////////////////
+//////////////////////////////////////
+//////////////////////////////////////
+
 type Futures_Order struct {
 	ClientOrderId string `json:"clientOrderId"`
 
