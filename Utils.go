@@ -1,6 +1,7 @@
 package Binance
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -12,6 +13,36 @@ func ParseInt(intStr string) (int64, error) {
 
 func ParseFloat(floatStr string) (float64, error) {
 	return strconv.ParseFloat(floatStr, 64)
+}
+
+func GetStringNumberPrecision(numStr string) int {
+	lastNumberIndex := 0
+	dotIndex := 0
+
+	dotFound := false
+
+	for i, char := range numStr {
+		if char == '.' {
+			dotFound = true
+			dotIndex = i
+		} else if char != '0' {
+			lastNumberIndex = i
+		}
+	}
+
+	if !dotFound {
+		dotIndex = len(numStr)
+	}
+
+	precision := lastNumberIndex - dotIndex
+
+	if precision < 0 {
+		precision++ // because if the number is right before the '.', then the precision must be 0, not -1 (so it's offset by 1)
+	}
+
+	fmt.Printf("NumStr: %s, precision: %d\n", numStr, precision)
+
+	return precision
 }
 
 func DetectDotNumIndexes(numStr string) (dotIndex int, numIndex int) {
@@ -31,32 +62,20 @@ func DetectDotNumIndexes(numStr string) (dotIndex int, numIndex int) {
 }
 
 func Format_TickSize_str(priceStr string, tickSize string) string {
-	_, numIndex := DetectDotNumIndexes(tickSize)
-	if numIndex == -1 {
-		return "0"
-	}
-
-	tickSize_dotIndex, tickSize_numIndex := DetectDotNumIndexes(tickSize)
-	if tickSize_numIndex == -1 {
-		return priceStr
-	}
-
-	var precision int
-
-	if tickSize_dotIndex == -1 {
-		precision = tickSize_numIndex - len(tickSize)
-	} else {
-		precision = tickSize_numIndex - tickSize_dotIndex
-	}
-
-	if precision < 0 {
-		precision++
-	}
+	precision := GetStringNumberPrecision(tickSize)
 
 	return Round_priceStr(priceStr, precision)
 }
 
 func Round_priceStr(priceStr string, precision int) string {
+
+	for i, char := range priceStr {
+		if char != '0' {
+			priceStr = priceStr[i:]
+			break
+		}
+	}
+
 	if precision == 0 {
 		return strings.Split(priceStr, ".")[0]
 	}
