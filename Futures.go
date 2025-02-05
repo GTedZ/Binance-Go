@@ -1268,6 +1268,216 @@ func (futures *Futures) MarketSell(symbol string, side string, quantity string, 
 
 // }
 
+func (futures *Futures) ChangeMarginType(symbol string, marginType string, recvWindow ...int64) (*Futures_ChangeMarginType_Response, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["marginType"] = marginType
+
+	if len(recvWindow) != 0 {
+		opts["recvWindow"] = recvWindow[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.TRADE,
+		method:       Constants.Methods.POST,
+		url:          "/fapi/v1/marginType",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var response *Futures_ChangeMarginType_Response
+	processingErr := json.Unmarshal(resp.Body, &response)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return response, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) ChangePositionMode(toHedgeMode bool, recvWindow ...int64) (*Futures_ChangePositionMode_Response, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["dualSidePosition"] = toHedgeMode
+
+	if len(recvWindow) != 0 {
+		opts["recvWindow"] = recvWindow[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.TRADE,
+		method:       Constants.Methods.POST,
+		url:          "/fapi/v1/positionSide/dual",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var response *Futures_ChangePositionMode_Response
+	processingErr := json.Unmarshal(resp.Body, &response)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return response, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) ChangeInitialLeverage(symbol string, leverage int, recvWindow ...int64) (*Futures_ChangeInitialLeverage_Response, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["symbol"] = symbol
+	opts["leverage"] = leverage
+
+	if len(recvWindow) != 0 {
+		opts["recvWindow"] = recvWindow[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.TRADE,
+		method:       Constants.Methods.POST,
+		url:          "/fapi/v1/leverage",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var response *Futures_ChangeInitialLeverage_Response
+	processingErr := json.Unmarshal(resp.Body, &response)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return response, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) ChangeMultiAssetsMode(multiAssetsMargin bool, recvWindow ...int64) (*Futures_ChangeMultiAssetsMode_Response, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	opts["multiAssetsMargin"] = multiAssetsMargin
+
+	if len(recvWindow) != 0 {
+		opts["recvWindow"] = recvWindow[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.TRADE,
+		method:       Constants.Methods.POST,
+		url:          "/fapi/v1/multiAssetsMargin",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var response *Futures_ChangeMultiAssetsMode_Response
+	processingErr := json.Unmarshal(resp.Body, &response)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return response, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) AccountInfo(recvWindow ...int64) (*Futures_AccountInfo, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(recvWindow) != 0 {
+		opts["recvWindow"] = recvWindow[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.USER_DATA,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v3/account",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var accountInfo *Futures_AccountInfo
+	processingErr := json.Unmarshal(resp.Body, &accountInfo)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return accountInfo, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) AccountConfiguration(recvWindow ...int64) (*Futures_AccountConfiguration, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(recvWindow) != 0 {
+		opts["recvWindow"] = recvWindow[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.USER_DATA,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/accountConfig",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var accountConfig *Futures_AccountConfiguration
+	processingErr := json.Unmarshal(resp.Body, &accountConfig)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return accountConfig, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+func (futures *Futures) LeverageBrackets(symbol ...string) ([]*Futures_LeverageBrackets, *Response, *Error) {
+	opts := make(map[string]interface{})
+
+	if len(symbol) != 0 {
+		opts["symbol"] = symbol[0]
+	}
+
+	resp, err := futures.makeRequest(&FuturesRequest{
+		securityType: FUTURES_Constants.SecurityTypes.USER_DATA,
+		method:       Constants.Methods.GET,
+		url:          "/fapi/v1/leverageBracket",
+		params:       opts,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if len(symbol) != 0 {
+		var leverageBrackets *Futures_LeverageBrackets
+		processingErr := json.Unmarshal(resp.Body, &leverageBrackets)
+		if processingErr != nil {
+			return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		}
+		return []*Futures_LeverageBrackets{leverageBrackets}, resp, nil
+	}
+
+	var leverageBrackets []*Futures_LeverageBrackets
+	processingErr := json.Unmarshal(resp.Body, &leverageBrackets)
+	if processingErr != nil {
+		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+	}
+	return leverageBrackets, resp, nil
+}
+
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////

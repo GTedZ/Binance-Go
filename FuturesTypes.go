@@ -866,3 +866,141 @@ type Futures_Order struct {
 	// order pre-set auto cancel time for "TIF" "GTD" order
 	GoodTillDate int64 `json:"goodTillDate"`
 }
+
+type Futures_ChangeMarginType_Response struct {
+	// 200 for success
+	Code int `json:"code"`
+	// "success"
+	Msg string `json:"msg"`
+}
+
+func (response *Futures_ChangeMarginType_Response) IsAlreadyChanged(err *Error) bool {
+	return !err.IsLocalError &&
+		(err.Code == -4046 || err.Message == "No need to change margin type.")
+
+}
+
+type Futures_ChangePositionMode_Response struct {
+	// 200 for success
+	Code int `json:"code"`
+	// "success"
+	Msg string `json:"msg"`
+}
+
+func (*Futures_ChangePositionMode_Response) IsAlreadyChanged(err *Error) bool {
+	return !err.IsLocalError &&
+		(err.Code == -4059 || err.Message == "No need to change position side.")
+}
+
+type Futures_ChangeInitialLeverage_Response struct {
+	Symbol           string `json:"symbol"`
+	Leverage         int64  `json:"leverage"`
+	MaxNotionalValue string `json:"maxNotionalValue"`
+}
+
+type Futures_ChangeMultiAssetsMode_Response struct {
+	// 200 for success
+	Code int `json:"code"`
+	// "success"
+	Msg string `json:"msg"`
+}
+
+func (*Futures_ChangeMultiAssetsMode_Response) IsAlreadyChanged(err *Error) bool {
+	return !err.IsLocalError &&
+		(err.Code == -4167 || err.Message == "Unable to adjust to Multi-Assets mode with symbols of USDⓈ-M Futures under isolated-margin mode.")
+}
+
+//////////////////////////////////////
+//////////////////////////////////////
+//////////////////////////////////////
+
+type Futures_AccountInfo struct {
+	TotalInitialMargin          string
+	TotalMaintMargin            string
+	TotalWalletBalance          string
+	TotalUnrealizedProfit       string
+	TotalMarginBalance          string
+	TotalPositionInitialMargin  string
+	TotalOpenOrderInitialMargin string
+	TotalCrossWalletBalance     string
+	TotalCrossUnPnl             string
+	AvailableBalance            string
+	MaxWithdrawAmount           string
+	Assets                      []*Futures_AccountInfo_Asset
+	Positions                   []*Futures_AccountInfo_Position
+}
+
+type Futures_AccountInfo_Asset struct {
+	Asset                  string `json:"asset"`
+	WalletBalance          string `json:"walletBalance"`
+	UnrealizedProfit       string `json:"unrealizedProfit"`
+	MarginBalance          string `json:"marginBalance"`
+	MaintMargin            string `json:"maintMargin"`
+	InitialMargin          string `json:"initialMargin"`
+	PositionInitialMargin  string `json:"positionInitialMargin"`
+	OpenOrderInitialMargin string `json:"openOrderInitialMargin"`
+	CrossWalletBalance     string `json:"crossWalletBalance"`
+	CrossUnPnl             string `json:"crossUnPnl"`
+	AvailableBalance       string `json:"availableBalance"`
+	MaxWithdrawAmount      string `json:"maxWithdrawAmount"`
+	UpdateTime             int64  `json:"updateTime"`
+}
+
+type Futures_AccountInfo_Position struct {
+	Symbol           string `json:"symbol"`
+	PositionSide     string `json:"positionSide"`
+	PositionAmt      string `json:"positionAmt"`
+	UnrealizedProfit string `json:"unrealizedProfit"`
+	IsolatedMargin   string `json:"isolatedMargin"`
+	Notional         string `json:"notional"`
+	IsolatedWallet   string `json:"isolatedWallet"`
+	InitialMargin    string `json:"initialMargin"`
+	MaintMargin      string `json:"maintMargin"`
+	UpdateTime       int64  `json:"updateTime"`
+}
+
+type Futures_UserCommissionRate struct {
+	Symbol              string `json:"symbol"`
+	MakerCommissionRate string `json:"makerCommissionRate"`
+	TakerCommissionRate string `json:"takerCommissionRate"`
+}
+
+type Futures_AccountConfiguration struct {
+	FeeTier           int64 `json:"feeTier"`
+	CanTrade          bool  `json:"canTrade"`
+	CanDeposit        bool  `json:"canDeposit"`
+	CanWithdraw       bool  `json:"canWithdraw"`
+	DualSidePosition  bool  `json:"dualSidePosition"`
+	UpdateTime        int64 `json:"updateTime"`
+	MultiAssetsMargin bool  `json:"multiAssetsMargin"`
+	TradeGroupId      int64 `json:"tradeGroupId"`
+}
+
+type Futures_LeverageBrackets struct {
+	Symbol string `json:"symbol"`
+
+	// user symbol bracket multiplier, only appears when user's symbol bracket is adjusted
+	NotionalCoef float64 `json:"notionalCoef"`
+
+	Brackets []*Futures_LeverageBrackets_Bracket `json:"brackets"`
+}
+type Futures_LeverageBrackets_Bracket struct {
+
+	// Notional bracket
+	Bracket int64 `json:"bracket"`
+
+	// Max initial leverage for this bracket
+	InitialLeverage int64 `json:"initialLeverage"`
+
+	// Cap notional of this bracket
+	NotionalCap int64 `json:"notionalCap"`
+
+	// Notional threshold of this bracket
+	NotionalFloor int64 `json:"notionalFloor"`
+
+	// Maintenance ratio for this bracket
+	MaintMarginRatio float64 `json:"maintMarginRatio"`
+
+	// Auxiliary number for quick calculation
+	Cum float64 `json:"cum"`
+}
