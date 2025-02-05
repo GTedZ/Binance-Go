@@ -10,7 +10,7 @@ type Binance struct {
 	Futures Futures
 }
 
-func CreateReadClient() Binance {
+func CreateReadClient() *Binance {
 	binance := Binance{}
 
 	binance.configs.init()
@@ -19,20 +19,20 @@ func CreateReadClient() Binance {
 	binance.Spot.init(&binance)
 	binance.Futures.init(&binance)
 
-	return binance
+	return &binance
 }
 
-func CreateClient(APIKEY string, APISECRET string) Binance {
+func CreateClient(APIKEY string, APISECRET string) *Binance {
 	binance := CreateReadClient()
 	binance.API.Set(APIKEY, APISECRET)
 
-	binance.Spot.init(&binance)
-	binance.Futures.init(&binance)
+	binance.Spot.init(binance)
+	binance.Futures.init(binance)
 
 	return binance
 }
 
-func CreateClientWithOptions(APIKEY string, APISECRET string, recvWindow int64) Binance {
+func CreateClientWithOptions(APIKEY string, APISECRET string, recvWindow int64) *Binance {
 	binance := CreateClient(APIKEY, APISECRET)
 
 	binance.Opts.Set_recvWindow(recvWindow)
