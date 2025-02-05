@@ -1149,7 +1149,7 @@ type Futures_LimitOrder_Params struct {
 	RecvWindow              int64
 }
 
-func (futures *Futures) LimitOrder(symbol string, side string, price string, quantity string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
+func (futures *Futures) LimitOrder(symbol string, side string, price string, quantity string, timeInForce string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
 	opts := make(map[string]interface{})
 
 	opts["symbol"] = symbol
@@ -1157,6 +1157,7 @@ func (futures *Futures) LimitOrder(symbol string, side string, price string, qua
 	opts["type"] = "LIMIT"
 	opts["price"] = price
 	opts["quantity"] = quantity
+	opts["timeInForce"] = timeInForce
 
 	if len(opt_params) != 0 {
 		params := opt_params[0]
@@ -1193,12 +1194,12 @@ func (futures *Futures) LimitOrder(symbol string, side string, price string, qua
 	return futures.newOrder(opts)
 }
 
-func (futures *Futures) LimitBuy(symbol string, price string, quantity string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
-	return futures.LimitOrder(symbol, "BUY", price, quantity, opt_params...)
+func (futures *Futures) LimitBuy(symbol string, price string, quantity string, timeInForce string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
+	return futures.LimitOrder(symbol, "BUY", price, quantity, timeInForce, opt_params...)
 }
 
-func (futures *Futures) LimitSell(symbol string, price string, quantity string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
-	return futures.LimitOrder(symbol, "SELL", price, quantity, opt_params...)
+func (futures *Futures) LimitSell(symbol string, price string, quantity string, timeInForce string, opt_params ...Futures_LimitOrder_Params) (*Futures_Order, *Response, *Error) {
+	return futures.LimitOrder(symbol, "SELL", price, quantity, timeInForce, opt_params...)
 }
 
 ///////////////////////// LIMIT ////////////////////////////
@@ -1207,11 +1208,8 @@ func (futures *Futures) LimitSell(symbol string, price string, quantity string, 
 
 type Futures_MarketOrder_Params struct {
 	PositionSide            string
-	TimeInForce             string
 	ReduceOnly              bool
-	Price                   string
 	NewClientOrderId        string
-	ClosePosition           string
 	WorkingType             string
 	NewOrderRespType        string
 	SelfTradePreventionMode string
@@ -1231,20 +1229,11 @@ func (futures *Futures) MarketOrder(symbol string, side string, quantity string,
 		if IsDifferentFromDefault(params.PositionSide) {
 			opts["positionSide"] = params.PositionSide
 		}
-		if IsDifferentFromDefault(params.TimeInForce) {
-			opts["timeInForce"] = params.TimeInForce
-		}
 		if IsDifferentFromDefault(params.ReduceOnly) {
 			opts["reduceOnly"] = params.ReduceOnly
 		}
-		if IsDifferentFromDefault(params.Price) {
-			opts["price"] = params.Price
-		}
 		if IsDifferentFromDefault(params.NewClientOrderId) {
 			opts["newClientOrderId"] = params.NewClientOrderId
-		}
-		if IsDifferentFromDefault(params.ClosePosition) {
-			opts["closePosition"] = params.ClosePosition
 		}
 		if IsDifferentFromDefault(params.WorkingType) {
 			opts["workingType"] = params.WorkingType
