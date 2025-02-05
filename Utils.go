@@ -1,7 +1,6 @@
 package Binance
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -39,8 +38,6 @@ func GetStringNumberPrecision(numStr string) int {
 	if precision < 0 {
 		precision++ // because if the number is right before the '.', then the precision must be 0, not -1 (so it's offset by 1)
 	}
-
-	fmt.Printf("NumStr: %s, precision: %d\n", numStr, precision)
 
 	return precision
 }
