@@ -1252,11 +1252,11 @@ func (futures *Futures) MarketOrder(symbol string, side string, quantity string,
 	return futures.newOrder(opts)
 }
 
-func (futures *Futures) MarketBuy(symbol string, side string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
+func (futures *Futures) MarketBuy(symbol string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
 	return futures.MarketOrder(symbol, "BUY", quantity, opt_params...)
 }
 
-func (futures *Futures) MarketSell(symbol string, side string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
+func (futures *Futures) MarketSell(symbol string, quantity string, opt_params ...Futures_MarketOrder_Params) (*Futures_Order, *Response, *Error) {
 	return futures.MarketOrder(symbol, "SELL", quantity, opt_params...)
 }
 
