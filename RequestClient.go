@@ -28,6 +28,10 @@ type Response struct {
 	ProtoMajor int    // e.g. 1
 	ProtoMinor int    // e.g. 0
 
+	// This is added by the 'Binance-Go' library
+	// It is simply the elapsed time between sending the request and receiving the response
+	Latency int64
+
 	// Header maps header keys to values. If the response had multiple
 	// headers with the same key, they may be concatenated, with comma
 	// delimiters.  (RFC 7230, section 3.2.2 requires that multiple headers
@@ -142,6 +146,13 @@ func (resp *Response) GetRequestTime() (time.Time, *Error) {
 	return parsedTime, nil
 }
 
+func (resp *Response) GetLatency() (latency int64, err *Error) {
+	if resp == nil {
+		return 0, LocalError(PARSING_ERROR, "Cannot read latency from nil response")
+	}
+	return resp.Latency, nil
+}
+
 //
 
 func (requestClient *RequestClient) init(binance *Binance) {
@@ -248,6 +259,7 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 
 	fullQuery := baseURL + URL + "?" + paramString
 
+	startTime := time.Now().UnixMilli()
 	switch method {
 	case Constants.Methods.GET:
 		rawResponse, err = http.Get(fullQuery)
@@ -260,12 +272,14 @@ func (requestClient *RequestClient) Unsigned(method string, baseURL string, URL 
 		return nil, LocalError(HTTP_REQUEST_ERR, err.Error())
 	}
 	defer rawResponse.Body.Close()
+	latency := time.Now().UnixMilli() - startTime
 
 	resp, err := readResponseBody(rawResponse)
 	if err != nil {
 		LOG_ERRORS("[VERBOSE] Error reading response body:", err)
 		return nil, LocalError(RESPONSEBODY_READING_ERR, err.Error())
 	}
+	resp.Latency = latency
 
 	LOG_HTTP_QUERIES(fmt.Sprintf("%s %s: %s\n", resp.Request.Method, resp.Status, fullQuery))
 	LOG_HTTP_RESPONSES(fmt.Sprintf("%s %s: %s =>\nResponse: %s\n", resp.Request.Method, resp.Status, fullQuery, string(resp.Body)))
