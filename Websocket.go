@@ -141,7 +141,7 @@ func setUpSocket(websocket *Websocket, conn *ws.Conn) {
 				err := json.Unmarshal(msg, &tempData)
 				if err != nil {
 					LOG_WS_ERRORS("ERR PARSING COMBINED MESSAGE!!!")
-					panic(fmt.Sprintln(LocalError(PARSING_ERROR, err.Error()).Error()))
+					panic(fmt.Sprintln(LocalError(PARSING_ERR, err.Error()).Error()))
 				}
 				msg = tempData.Data
 			}

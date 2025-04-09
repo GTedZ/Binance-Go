@@ -148,7 +148,7 @@ func (futures_ws *Futures_Websockets) AggTrade(publicOnMessage func(aggTrade *Fu
 		var aggTrade FuturesWS_AggTrade
 		err := json.Unmarshal(msg, &aggTrade)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&aggTrade)
@@ -231,7 +231,7 @@ func (futures_ws *Futures_Websockets) MarkPrice(publicOnMessage func(markPrice *
 		var markPrice FuturesWS_MarkPrice
 		err := json.Unmarshal(msg, &markPrice)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&markPrice)
@@ -289,7 +289,7 @@ func (futures_ws *Futures_Websockets) AllMarkPrices(publicOnMessage func(markPri
 		var markPrices []*FuturesWS_MarkPrice
 		err := json.Unmarshal(msg, &markPrices)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(markPrices)
@@ -409,7 +409,7 @@ func (futures_ws *Futures_Websockets) Candlesticks(publicOnMessage func(candlest
 		var kline *FuturesWS_Candlestick
 		err := json.Unmarshal(msg, &kline)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(kline)
@@ -530,7 +530,7 @@ func (futures_ws *Futures_Websockets) ContinuousCandlesticks(publicOnMessage fun
 		var kline *FuturesWS_ContinuousCandlestick
 		err := json.Unmarshal(msg, &kline)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(kline)
@@ -608,7 +608,7 @@ func (futures_ws *Futures_Websockets) MiniTicker(publicOnMessage func(miniTicker
 		var miniTicker *FuturesWS_MiniTicker
 		err := json.Unmarshal(msg, &miniTicker)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(miniTicker)
@@ -650,7 +650,7 @@ func (futures_ws *Futures_Websockets) AllMiniTickers(publicOnMessage func(miniTi
 		var miniTickers []*FuturesWS_MiniTicker
 		err := json.Unmarshal(msg, &miniTickers)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(miniTickers)
@@ -755,7 +755,7 @@ func (futures_ws *Futures_Websockets) Ticker(publicOnMessage func(ticker *Future
 		var ticker *FuturesWS_Ticker
 		err := json.Unmarshal(msg, &ticker)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(ticker)
@@ -797,7 +797,7 @@ func (futures_ws *Futures_Websockets) AllTickers(publicOnMessage func(tickers []
 		var tickers []*FuturesWS_Ticker
 		err := json.Unmarshal(msg, &tickers)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(tickers)
@@ -873,7 +873,7 @@ func (futures_ws *Futures_Websockets) BookTicker(publicOnMessage func(bookTicker
 		var bookTicker FuturesWS_BookTicker
 		err := json.Unmarshal(msg, &bookTicker)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&bookTicker)
@@ -917,7 +917,7 @@ func (futures_ws *Futures_Websockets) AllBookTickers(publicOnMessage func(bookTi
 		var bookTickers []*FuturesWS_BookTicker
 		err := json.Unmarshal(msg, &bookTickers)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(bookTickers)
@@ -1012,7 +1012,7 @@ func (futures_ws *Futures_Websockets) LiquidationOrders(publicOnMessage func(liq
 		var liquidationOrder *FuturesWS_LiquidationOrder
 		err := json.Unmarshal(msg, &liquidationOrder)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(liquidationOrder)
@@ -1054,7 +1054,7 @@ func (futures_ws *Futures_Websockets) AllLiquidationOrders(publicOnMessage func(
 		var liquidationOrder *FuturesWS_LiquidationOrder
 		err := json.Unmarshal(msg, &liquidationOrder)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(liquidationOrder)
@@ -1157,7 +1157,7 @@ func (futures_ws *Futures_Websockets) PartialBookDepth(publicOnMessage func(part
 		var partialBookDepth *FuturesWS_PartialBookDepth
 		err := json.Unmarshal(msg, &partialBookDepth)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(partialBookDepth)
@@ -1257,7 +1257,7 @@ func (futures_ws *Futures_Websockets) DiffBookDepth(publicOnMessage func(diffBoo
 		var diffBookDepth *FuturesWS_DiffBookDepth
 		err := json.Unmarshal(msg, &diffBookDepth)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(diffBookDepth)
@@ -1341,7 +1341,7 @@ func (futures_ws *Futures_Websockets) CompositeIndexSymbolInfo(publicOnMessage f
 		var compositeIndexSymbolInfo *FuturesWS_CompositeIndexSymbolInfo
 		err := json.Unmarshal(msg, &compositeIndexSymbolInfo)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(compositeIndexSymbolInfo)
@@ -1435,7 +1435,7 @@ func (futures_ws *Futures_Websockets) ContractInfo(publicOnMessage func(contract
 		var aggTrade FuturesWS_ContractInfo
 		err := json.Unmarshal(msg, &aggTrade)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&aggTrade)
@@ -1520,7 +1520,7 @@ func (futures_ws *Futures_Websockets) MultiAssetsModeAssetIndex(publicOnMessage 
 		var assetIndexes []*FuturesWS_MultiAssetsModeAssetIndex
 		err := json.Unmarshal(msg, &assetIndexes)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(assetIndexes)
@@ -1562,7 +1562,7 @@ func (futures_ws *Futures_Websockets) AllMultiAssetsModeAssetIndexes(publicOnMes
 		var assetIndexes []*FuturesWS_MultiAssetsModeAssetIndex
 		err := json.Unmarshal(msg, &assetIndexes)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(assetIndexes)
@@ -1874,7 +1874,7 @@ func (futures_ws *Futures_Websockets) Managed_OrderBook(publicOnMessage func(ord
 		var diffBookDepth *FuturesWS_DiffBookDepth
 		err := json.Unmarshal(msg, &diffBookDepth)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 
@@ -1916,7 +1916,7 @@ func (*Futures_Websockets) CreateSocket(streams []string, isCombined bool) (*Fut
 		err := json.Unmarshal(msg, &privateMessage)
 		if err != nil {
 			LOG_WS_ERRORS("[PRIVATEMESSAGEVALIDATOR ERR] WS Message is the following:", string(msg))
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return false, ""
 		}
 

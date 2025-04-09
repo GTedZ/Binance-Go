@@ -132,7 +132,7 @@ func (spot_ws *Spot_Websockets) AggTrade(publicOnMessage func(aggTrade *SpotWS_A
 		var aggTrade SpotWS_AggTrade
 		err := json.Unmarshal(msg, &aggTrade)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&aggTrade)
@@ -196,7 +196,7 @@ func (spot_ws *Spot_Websockets) Trade(publicOnMessage func(trade *SpotWS_Trade),
 		var trade SpotWS_Trade
 		err := json.Unmarshal(msg, &trade)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&trade)
@@ -322,7 +322,7 @@ func (spot_ws *Spot_Websockets) Candlesticks(publicOnMessage func(candlestick_ms
 		var candlestick_msg SpotWS_Candlestick_MSG
 		err := json.Unmarshal(msg, &candlestick_msg)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&candlestick_msg)
@@ -375,7 +375,7 @@ func (spot_ws *Spot_Websockets) Candlestick_WithOffset(publicOnMessage func(cand
 		var candlestick_msg SpotWS_Candlestick_MSG
 		err := json.Unmarshal(msg, &candlestick_msg)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&candlestick_msg)
@@ -454,7 +454,7 @@ func (spot_ws *Spot_Websockets) MiniTicker(publicOnMessage func(miniTicker *Spot
 		var miniTicker SpotWS_MiniTicker
 		err := json.Unmarshal(msg, &miniTicker)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&miniTicker)
@@ -492,7 +492,7 @@ func (spot_ws *Spot_Websockets) AllMiniTickers(publicOnMessage func(miniTickers 
 		var miniTickers []*SpotWS_MiniTicker
 		err := json.Unmarshal(msg, &miniTickers)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(miniTickers)
@@ -613,7 +613,7 @@ func (spot_ws *Spot_Websockets) Ticker(publicOnMessage func(ticker *SpotWS_Ticke
 		var ticker SpotWS_Ticker
 		err := json.Unmarshal(msg, &ticker)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&ticker)
@@ -651,7 +651,7 @@ func (spot_ws *Spot_Websockets) AllTickers(publicOnMessage func(tickers []*SpotW
 		var tickers []*SpotWS_Ticker
 		err := json.Unmarshal(msg, &tickers)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(tickers)
@@ -764,7 +764,7 @@ func (spot_ws *Spot_Websockets) RollingWindowStatistics(publicOnMessage func(rwS
 		var rwStat SpotWS_RollingWindowStatistic
 		err := json.Unmarshal(msg, &rwStat)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(&rwStat)
@@ -815,7 +815,7 @@ func (spot_ws *Spot_Websockets) AllRollingWindowStatistics(publicOnMessage func(
 		var rwStats []*SpotWS_RollingWindowStatistic
 		err := json.Unmarshal(msg, &rwStats)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(rwStats)
@@ -887,7 +887,7 @@ func (spot_ws *Spot_Websockets) BookTicker(publicOnMessage func(bookTicker *Spot
 		var bookTicker *SpotWS_BookTicker
 		err := json.Unmarshal(msg, &bookTicker)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(bookTicker)
@@ -959,7 +959,7 @@ func (spot_ws *Spot_Websockets) AveragePrice(publicOnMessage func(averagePrice *
 		var averagePrice *SpotWS_AveragePrice
 		err := json.Unmarshal(msg, &averagePrice)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(averagePrice)
@@ -1072,7 +1072,7 @@ func (spot_ws *Spot_Websockets) PartialBookDepth(publicOnMessage func(partialBoo
 		var partialBookDepth *SpotWS_PartialBookDepth
 		err := json.Unmarshal(msg, &partialBookDepth)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(partialBookDepth)
@@ -1184,7 +1184,7 @@ func (spot_ws *Spot_Websockets) DiffBookDepth(publicOnMessage func(diffBookDepth
 		var diffBookDepth *SpotWS_DiffBookDepth
 		err := json.Unmarshal(msg, &diffBookDepth)
 		if err != nil {
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return
 		}
 		publicOnMessage(diffBookDepth)
@@ -1218,7 +1218,7 @@ func (*Spot_Websockets) CreateSocket(streams []string, isCombined bool) (*Spot_W
 		err := json.Unmarshal(msg, &privateMessage)
 		if err != nil {
 			LOG_WS_ERRORS("[PRIVATEMESSAGEVALIDATOR ERR] WS Message is the following:", string(msg))
-			LocalError(PARSING_ERROR, err.Error())
+			LocalError(PARSING_ERR, err.Error())
 			return false, ""
 		}
 

@@ -1,9 +1,30 @@
 package Binance
 
-const SECOND = 1000
+import "sync"
+
+const MILLISECOND = 1
+const SECOND = 1000 * MILLISECOND
 const MINUTE = 60 * SECOND
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
+const WEEK = 7 * DAY
+
+var INTERVALS_mu sync.Mutex
+var STATIC_INTERVAL_CHARS = map[rune]int64{
+	'x': MILLISECOND,
+	's': SECOND,
+	'm': MINUTE,
+	'h': HOUR,
+	'd': DAY,
+	'w': WEEK,
+}
+var COMPLEX_INTERVALS = struct {
+	MONTH rune
+	YEAR  rune
+}{
+	MONTH: 'M',
+	YEAR:  'Y',
+}
 
 var Constants = struct {
 	Methods   Methods

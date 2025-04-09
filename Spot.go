@@ -77,7 +77,7 @@ func (spot *Spot) ServerTime() (*Spot_Time, *Response, *Error) {
 
 	processingErr := json.Unmarshal(httpResp.Body, &spotTime)
 	if processingErr != nil {
-		return &spotTime, httpResp, LocalError(PARSING_ERROR, processingErr.Error())
+		return &spotTime, httpResp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	return &spotTime, httpResp, nil
@@ -189,7 +189,7 @@ func ParseSpotExchangeInfo(exchangeInfo_response *Response) (*Spot_ExchangeInfo,
 
 	err := json.Unmarshal(exchangeInfo_response.Body, &exchangeInfo)
 	if err != nil {
-		return nil, LocalError(PARSING_ERROR, err.Error())
+		return nil, LocalError(PARSING_ERR, err.Error())
 	}
 
 	exchangeInfo.Symbols = make(map[string]*Spot_Symbol)
@@ -214,7 +214,7 @@ func (exchangeInfo *Spot_ExchangeInfo) UnmarshalJSON(data []byte) error {
 
 	err := json.Unmarshal(data, &aux)
 	if err != nil {
-		return LocalError(PARSING_ERROR, err.Error())
+		return LocalError(PARSING_ERR, err.Error())
 	}
 
 	for _, filter := range aux.Filters {
@@ -378,7 +378,7 @@ func (spot *Spot) OrderBook(symbol string, limit ...int64) (*Spot_OrderBook, *Re
 
 	processingErr := json.Unmarshal(resp.Body, &orderBook)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	return orderBook, resp, nil
@@ -415,7 +415,7 @@ func (spot *Spot) RecentTrades(symbol string, limit ...int64) ([]*Spot_Trade, *R
 
 	processingErr := json.Unmarshal(resp.Body, &trades)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	return trades, resp, nil
@@ -472,7 +472,7 @@ func (spot *Spot) OldTrades(symbol string, opt_params ...*Spot_OldTrades_Params)
 
 	processingErr := json.Unmarshal(resp.Body, &trades)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	return trades, resp, nil
@@ -543,7 +543,7 @@ func (spot *Spot) AggTrades(symbol string, opt_params ...*Spot_AggTrades_Params)
 
 	processingErr := json.Unmarshal(resp.Body, &aggTrades)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	return aggTrades, resp, nil
@@ -640,7 +640,7 @@ func (spot *Spot) Candlesticks(symbol string, interval string, opt_params ...*Sp
 	var rawCandlesticks [][]interface{}
 	processingErr := json.Unmarshal(resp.Body, &rawCandlesticks)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	// Convert the raw data to Spot_Candlestick slice
@@ -702,7 +702,7 @@ func (spot *Spot) UIKlines(symbol string, interval string, opt_params ...*Spot_C
 	var rawCandlesticks [][]interface{}
 	processingErr := json.Unmarshal(resp.Body, &rawCandlesticks)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	// Convert the raw data to Spot_Candlestick slice
@@ -747,7 +747,7 @@ func (spot *Spot) AveragePrice(symbol string) (*Spot_AveragePrice, *Response, *E
 	var avgPrice Spot_AveragePrice
 	processingErr := json.Unmarshal(resp.Body, &avgPrice)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 
 	return &avgPrice, resp, nil
@@ -776,7 +776,7 @@ func (spot *Spot) Ticker_RollingWindow24h(symbol ...string) ([]*Spot_Ticker_Roll
 	var tickers []*Spot_Ticker_RollingWindow24h
 	processingErr := json.Unmarshal(resp.Body, &tickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return tickers, resp, nil
 
@@ -806,7 +806,7 @@ func (spot *Spot) MiniTicker_RollingWindow24h(symbol ...string) ([]*Spot_MiniTic
 	var miniTickers []*Spot_MiniTicker_RollingWindow24h
 	processingErr := json.Unmarshal(resp.Body, &miniTickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return miniTickers, resp, nil
 
@@ -840,7 +840,7 @@ func (spot *Spot) Ticker_RollingWindow(opt_params *Spot_Ticker_RollingWindow_Par
 	var tickers []*Spot_Ticker_RollingWindow
 	processingErr := json.Unmarshal(resp.Body, &tickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return tickers, resp, nil
 
@@ -870,7 +870,7 @@ func (spot *Spot) MiniTicker_RollingWindow(opt_params *Spot_Ticker_RollingWindow
 	var miniTickers []*Spot_MiniTicker_RollingWindow
 	processingErr := json.Unmarshal(resp.Body, &miniTickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return miniTickers, resp, nil
 
@@ -906,7 +906,7 @@ func (spot *Spot) Ticker(opt_params *Spot_Ticker_Params) ([]*Spot_Ticker, *Respo
 	var tickers []*Spot_Ticker
 	processingErr := json.Unmarshal(resp.Body, &tickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return tickers, resp, nil
 }
@@ -937,7 +937,7 @@ func (spot *Spot) MiniTicker(opt_params *Spot_Ticker_Params) ([]*Spot_MiniTicker
 	var miniTickers []*Spot_MiniTicker
 	processingErr := json.Unmarshal(resp.Body, &miniTickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return miniTickers, resp, nil
 }
@@ -964,7 +964,7 @@ func (spot *Spot) PriceTicker(symbol ...string) ([]*Spot_PriceTicker, *Response,
 	var priceTickers []*Spot_PriceTicker
 	processingErr := json.Unmarshal(resp.Body, &priceTickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return priceTickers, resp, nil
 
@@ -992,7 +992,7 @@ func (spot *Spot) BookTicker(symbol ...string) ([]*Spot_BookTicker, *Response, *
 	var bookTickers []*Spot_BookTicker
 	processingErr := json.Unmarshal(resp.Body, &bookTickers)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return bookTickers, resp, nil
 
@@ -1023,7 +1023,7 @@ func (spot *Spot) newOrder(opts map[string]interface{}) (*Spot_Order, *Response,
 	var order *Spot_Order
 	processingErr := json.Unmarshal(resp.Body, &order)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return order, resp, nil
 }
@@ -1316,7 +1316,7 @@ func (spot *Spot) QueryOrder(symbol string, orderId int64, opt_params ...Spot_Qu
 	var order *Spot_Order
 	processingErr := json.Unmarshal(resp.Body, &order)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return order, resp, nil
 }
@@ -1354,7 +1354,7 @@ func (spot *Spot) AccountInfo(opt_params ...Spot_AccountInfo_Params) (*Spot_Acco
 	var accountInfo *Spot_AccountInfo
 	processingErr := json.Unmarshal(resp.Body, &accountInfo)
 	if processingErr != nil {
-		return nil, resp, LocalError(PARSING_ERROR, processingErr.Error())
+		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return accountInfo, resp, nil
 }
