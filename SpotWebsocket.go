@@ -1,7 +1,6 @@
 package Binance
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -1218,7 +1217,7 @@ func (*Spot_Websockets) CreateSocket(streams []string, isCombined bool) (*Spot_W
 		var privateMessage SpotWS_PrivateMessage
 		err := json.Unmarshal(msg, &privateMessage)
 		if err != nil {
-			fmt.Println("[PRIVATEMESSAGEVALIDATOR ERR] WS Message is the following:", string(msg))
+			LOG_WS_ERRORS("[PRIVATEMESSAGEVALIDATOR ERR] WS Message is the following:", string(msg))
 			LocalError(PARSING_ERROR, err.Error())
 			return false, ""
 		}

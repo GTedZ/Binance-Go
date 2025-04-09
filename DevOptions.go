@@ -33,7 +33,7 @@ var DevOptions = DevOpts{
 	WS_VERBOSE:      false,
 	WS_VERBOSE_FULL: false,
 
-	PRINT_WS_ERRORS: false,
+	PRINT_WS_ERRORS: true,
 
 	PRINT_WS_MESSAGES: false,
 }

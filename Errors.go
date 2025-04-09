@@ -36,6 +36,7 @@ const (
 	WS_OPEN_ERR
 	WS_SEND_MESSAGE_ERR
 	REQUEST_TIMEOUT_ERR
+	DATA_NOT_FOUND
 )
 
 func newError(isLocal bool, statusCode int, code int, message string) *Error {

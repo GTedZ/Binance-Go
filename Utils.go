@@ -11,7 +11,14 @@ func ParseInt(intStr string) (int64, error) {
 }
 
 func ParseFloat(floatStr string) (float64, error) {
-	return strconv.ParseFloat(floatStr, 64)
+	precision := GetStringNumberPrecision(floatStr)
+
+	float, err := strconv.ParseFloat(floatStr, 64)
+	if err != nil {
+		return float, err
+	}
+
+	return ToFixed_Round(float, precision), nil
 }
 
 func GetStringNumberPrecision(numStr string) int {
