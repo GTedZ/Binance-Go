@@ -2,8 +2,6 @@ package Binance
 
 import (
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -1581,8 +1579,8 @@ func (futures_ws *Futures_Websockets) AllMultiAssetsModeAssetIndexes(publicOnMes
 type Futures_ManagedOrderbook struct {
 	Symbol       string
 	LastUpdateId int64
-	Bids         [][2]string
-	Asks         [][2]string
+	Bids         [][2]float64
+	Asks         [][2]float64
 
 	isReadyToUpdate bool
 	isFetching      bool
@@ -1591,30 +1589,33 @@ type Futures_ManagedOrderbook struct {
 }
 
 func (managedOrderBook *Futures_ManagedOrderbook) addEvent(event *FuturesWS_DiffBookDepth) {
-	for _, newBid := range event.Bids {
+	var new_bidAsk_placeholder [2]float64
+
+	for _, newBid_str := range event.Bids {
+		new_bidAsk_placeholder[0], _ = ParseFloat(newBid_str[0])
+		new_bidAsk_placeholder[1], _ = ParseFloat(newBid_str[1])
+
 		found := false
 		for i, bid := range managedOrderBook.Bids {
-			if bid[0] == newBid[0] {
+			if bid[0] == new_bidAsk_placeholder[0] {
 				found = true
 
-				float, err := strconv.ParseFloat(newBid[1], 64)
-				if err == nil && float == 0 {
+				if new_bidAsk_placeholder[1] == 0 {
 					managedOrderBook.Bids = slices.Delete(managedOrderBook.Bids, i, i+1)
 				} else {
-					managedOrderBook.Bids[i][1] = newBid[1]
+					managedOrderBook.Bids[i][1] = new_bidAsk_placeholder[1]
 				}
 			}
 		}
 
 		if !found {
-			float, err := strconv.ParseFloat(newBid[1], 64)
-			if err != nil || float != 0 {
+			if new_bidAsk_placeholder[1] != 0 {
 				inserted := false
 				for i := range managedOrderBook.Bids {
 					// Compare the price of the new bid with the existing bid
-					if managedOrderBook.Bids[i][0] < newBid[0] {
+					if managedOrderBook.Bids[i][0] < new_bidAsk_placeholder[0] {
 						// Insert the new bid before this index
-						managedOrderBook.Bids = append(managedOrderBook.Bids[:i], append([][2]string{newBid}, managedOrderBook.Bids[i:]...)...)
+						managedOrderBook.Bids = append(managedOrderBook.Bids[:i], append([][2]float64{new_bidAsk_placeholder}, managedOrderBook.Bids[i:]...)...)
 						inserted = true
 						break
 					}
@@ -1622,36 +1623,37 @@ func (managedOrderBook *Futures_ManagedOrderbook) addEvent(event *FuturesWS_Diff
 
 				// If the new bid is lower than all existing bids, append it to the end
 				if !inserted {
-					managedOrderBook.Bids = append(managedOrderBook.Bids, newBid)
+					managedOrderBook.Bids = append(managedOrderBook.Bids, new_bidAsk_placeholder)
 				}
 			}
 		}
 	}
 
-	for _, newAsk := range event.Asks {
+	for _, newAsk_str := range event.Asks {
+		new_bidAsk_placeholder[0], _ = ParseFloat(newAsk_str[0])
+		new_bidAsk_placeholder[1], _ = ParseFloat(newAsk_str[1])
+
 		found := false
 		for i, ask := range managedOrderBook.Asks {
-			if ask[0] == newAsk[0] {
+			if ask[0] == new_bidAsk_placeholder[0] {
 
-				float, err := strconv.ParseFloat(newAsk[1], 64)
-				if err == nil && float == 0 {
+				if new_bidAsk_placeholder[1] == 0 {
 					managedOrderBook.Asks = slices.Delete(managedOrderBook.Asks, i, i+1)
 				} else {
-					managedOrderBook.Asks[i][1] = newAsk[1]
+					managedOrderBook.Asks[i][1] = new_bidAsk_placeholder[1]
 				}
 				found = true
 			}
 		}
 
 		if !found {
-			float, err := strconv.ParseFloat(newAsk[1], 64)
-			if err != nil || float != 0 {
+			if new_bidAsk_placeholder[1] != 0 {
 				inserted := false
 				for i := range managedOrderBook.Asks {
 					// Compare the price of the new ask with the existing ask
-					if managedOrderBook.Asks[i][0] > newAsk[0] {
+					if managedOrderBook.Asks[i][0] > new_bidAsk_placeholder[0] {
 						// Insert the new ask before this index
-						managedOrderBook.Asks = append(managedOrderBook.Asks[:i], append([][2]string{newAsk}, managedOrderBook.Asks[i:]...)...)
+						managedOrderBook.Asks = append(managedOrderBook.Asks[:i], append([][2]float64{new_bidAsk_placeholder}, managedOrderBook.Asks[i:]...)...)
 						inserted = true
 						break
 					}
@@ -1659,7 +1661,7 @@ func (managedOrderBook *Futures_ManagedOrderbook) addEvent(event *FuturesWS_Diff
 
 				// If the new ask is higher than all existing asks, append it to the end
 				if !inserted {
-					managedOrderBook.Asks = append(managedOrderBook.Asks, newAsk)
+					managedOrderBook.Asks = append(managedOrderBook.Asks, new_bidAsk_placeholder)
 				}
 			}
 		}
@@ -1667,17 +1669,13 @@ func (managedOrderBook *Futures_ManagedOrderbook) addEvent(event *FuturesWS_Diff
 	}
 
 	// start := time.Now().UnixMicro()
-	sort.SliceStable(managedOrderBook.Asks, func(i, j int) bool {
-		val1, _ := ParseFloat(managedOrderBook.Asks[i][0])
-		val2, _ := ParseFloat(managedOrderBook.Asks[j][0])
-		return val1 < val2
-	})
+	// sort.SliceStable(managedOrderBook.Asks, func(i, j int) bool {
+	// 	return managedOrderBook.Asks[i][0] < managedOrderBook.Asks[j][0]
+	// })
 
-	sort.SliceStable(managedOrderBook.Bids, func(i, j int) bool {
-		val1, _ := ParseFloat(managedOrderBook.Bids[i][0])
-		val2, _ := ParseFloat(managedOrderBook.Bids[j][0])
-		return val1 > val2
-	})
+	// sort.SliceStable(managedOrderBook.Bids, func(i, j int) bool {
+	// 	return managedOrderBook.Bids[i][0] > managedOrderBook.Bids[j][0]
+	// })
 	// fmt.Println(time.Now().UnixMicro()-start, "micro")
 
 	managedOrderBook.previousEvent = event
@@ -1723,8 +1721,38 @@ func (handler *FuturesWS_ManagedOrderBook_Handler) handleWSMessage(futures_ws *F
 		}
 
 		Orderbook_symbol.Orderbook.LastUpdateId = newOrderBook.LastUpdateId
-		Orderbook_symbol.Orderbook.Bids = newOrderBook.Bids
-		Orderbook_symbol.Orderbook.Asks = newOrderBook.Asks
+		Orderbook_symbol.Orderbook.Asks = make([][2]float64, len(newOrderBook.Asks))
+		Orderbook_symbol.Orderbook.Bids = make([][2]float64, len(newOrderBook.Bids))
+
+		for i, ask := range newOrderBook.Asks {
+			priceLvl, err1 := ParseFloat(ask[0])
+			priceQty, err2 := ParseFloat(ask[1])
+			if err1 != nil {
+				LOG_WS_ERRORS(fmt.Sprintf("Failed to parse bid priceLevel '%s'", ask[0]))
+				// continue
+			}
+			if err2 != nil {
+				LOG_WS_ERRORS(fmt.Sprintf("Failed to parse bid priceQty '%s'", ask[1]))
+				// continue
+			}
+			Orderbook_symbol.Orderbook.Asks[i][0] = priceLvl
+			Orderbook_symbol.Orderbook.Asks[i][1] = priceQty
+		}
+
+		for i, bid := range newOrderBook.Bids {
+			priceLvl, err1 := ParseFloat(bid[0])
+			priceQty, err2 := ParseFloat(bid[1])
+			if err1 != nil {
+				LOG_WS_ERRORS(fmt.Sprintf("Failed to parse ask priceLevel '%s'", bid[0]))
+				// continue
+			}
+			if err2 != nil {
+				LOG_WS_ERRORS(fmt.Sprintf("Failed to parse ask priceQty '%s'", bid[1]))
+				// continue
+			}
+			Orderbook_symbol.Orderbook.Bids[i][0] = priceLvl
+			Orderbook_symbol.Orderbook.Bids[i][1] = priceQty
+		}
 
 		Orderbook_symbol.Orderbook.isReadyToUpdate = true
 	}
