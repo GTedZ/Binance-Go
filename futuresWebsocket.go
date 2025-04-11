@@ -2,6 +2,7 @@ package Binance
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
@@ -316,14 +317,17 @@ type FuturesWS_Candlestick struct {
 }
 type FuturesWS_Candlestick_Kline struct {
 
+	// Symbol
+	Symbol string `json:"s"`
+
 	// Kline start time
 	OpenTime int64 `json:"t"`
 
 	// Kline close time
 	CloseTime int64 `json:"T"`
 
-	// Symbol
-	Symbol string `json:"s"`
+	// Is this kline closed?
+	IsClosed bool `json:"x"`
 
 	// Interval
 	Interval string `json:"i"`
@@ -346,14 +350,11 @@ type FuturesWS_Candlestick_Kline struct {
 	// Low price
 	Low string `json:"l"`
 
-	// Base asset volume
-	BaseAssetVolume string `json:"v"`
-
 	// Number of trades
 	TradeCount int64 `json:"n"`
 
-	// Is this kline closed?
-	IsClosed bool `json:"x"`
+	// Base asset volume
+	BaseAssetVolume string `json:"v"`
 
 	// Quote asset volume
 	QuoteAssetVolume string `json:"q"`
@@ -1685,7 +1686,7 @@ type FuturesWS_ManagedOrderBook_Handler struct {
 	DiffBookDepth_Socket *FuturesWS_DiffBookDepth_Socket
 
 	Orderbooks struct {
-		mu      sync.Mutex
+		Mu      sync.Mutex
 		Symbols map[string]struct {
 			bufferedEvents []*FuturesWS_DiffBookDepth
 			Orderbook      *Futures_ManagedOrderbook
@@ -1694,8 +1695,8 @@ type FuturesWS_ManagedOrderBook_Handler struct {
 }
 
 func (handler *FuturesWS_ManagedOrderBook_Handler) handleWSMessage(futures_ws *Futures_Websockets, diffBookDepth *FuturesWS_DiffBookDepth) (shouldPushEvent bool, managedOrderBook *Futures_ManagedOrderbook) {
-	handler.Orderbooks.mu.Lock()
-	defer handler.Orderbooks.mu.Unlock()
+	handler.Orderbooks.Mu.Lock()
+	defer handler.Orderbooks.Mu.Unlock()
 	Orderbook_symbol, exists := handler.Orderbooks.Symbols[diffBookDepth.Symbol]
 	if !exists {
 		LOG_WS_MESSAGES(fmt.Sprintf("Orderbook data for %s weren't found in handleWSMessage", diffBookDepth.Symbol))
@@ -1795,8 +1796,8 @@ func (handler *FuturesWS_ManagedOrderBook_Handler) handleWSMessage(futures_ws *F
 }
 
 func (handler *FuturesWS_ManagedOrderBook_Handler) openNewSymbols(params ...FuturesWS_DiffBookDepth_Params) {
-	handler.Orderbooks.mu.Lock()
-	defer handler.Orderbooks.mu.Unlock()
+	handler.Orderbooks.Mu.Lock()
+	defer handler.Orderbooks.Mu.Unlock()
 
 	for _, param := range params {
 		symbol := param.Symbol
@@ -1822,8 +1823,8 @@ func (handler *FuturesWS_ManagedOrderBook_Handler) openNewSymbols(params ...Futu
 }
 
 func (handler *FuturesWS_ManagedOrderBook_Handler) removeSymbols(params ...FuturesWS_DiffBookDepth_Params) {
-	handler.Orderbooks.mu.Lock()
-	defer handler.Orderbooks.mu.Unlock()
+	handler.Orderbooks.Mu.Lock()
+	defer handler.Orderbooks.Mu.Unlock()
 
 	for _, param := range params {
 		symbol := param.Symbol
@@ -1890,6 +1891,607 @@ func (futures_ws *Futures_Websockets) Managed_OrderBook(publicOnMessage func(ord
 		Orderbook      *Futures_ManagedOrderbook
 	})
 	handler.openNewSymbols(params...)
+
+	return handler, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type FuturesWS_ManagedCandlesticks_Handler struct {
+	Candlesticks_Socket *FuturesWS_Candlestick_Socket
+	AggTrades_Socket    *FuturesWS_AggTrade_Socket
+
+	intervals []*FuturesWS_Interval
+
+	Candlesticks struct {
+		Mu      sync.Mutex
+		Symbols map[string]*FuturesWS_ManagedCandlestick_Symbol
+	}
+}
+
+type FuturesWS_Interval struct {
+	Name       string
+	Multiplier int64
+	Rune       rune
+	Value      int64
+	Custom     bool
+}
+
+type FuturesWS_ManagedCandlestick_Symbol struct {
+	Symbol    string
+	AggTrades []*FuturesWS_ManagedCandlestick_AggTrade
+	Intervals struct {
+		Mu  sync.Mutex
+		Map map[string]*FuturesWS_ManagedCandlestick_Interval
+	}
+}
+
+type FuturesWS_ManagedCandlestick_Interval struct {
+	Interval     *FuturesWS_Interval
+	Candlesticks []*FuturesWS_ManagedCandlestick
+}
+
+type FuturesWS_Candlestick_Float64 struct {
+	OpenTime  int64
+	CloseTime int64
+
+	Open  float64
+	High  float64
+	Low   float64
+	Close float64
+
+	Volume                   float64
+	QuoteAssetVolume         float64
+	TakerBuyBaseAssetVolume  float64
+	TakerBuyQuoteAssetVolume float64
+	TradeCount               int64
+}
+
+type FuturesWS_ManagedCandlestick struct {
+	OpenTime  int64
+	CloseTime int64
+
+	Open  float64
+	High  float64
+	Low   float64
+	Close float64
+
+	Volume                   float64
+	QuoteAssetVolume         float64
+	TakerBuyBaseAssetVolume  float64
+	TakerBuyQuoteAssetVolume float64
+	TradeCount               int64
+
+	// Calculated from the incoming aggTrades
+	//
+	// If being used, always use math.Max(Calculated_Volume, Volume)
+	Calculated_Volume float64
+
+	// Calculated from the incoming aggTrades
+	//
+	// If being used, always use math.Max(Calculated_QuoteAssetVolume, QuoteAssetVolume)
+	Calculated_QuoteAssetVolume float64
+
+	// # Not sure if calculated correctly
+	//
+	// Currently calculated via adding to it ONLY if the aggTrade has 'IsMaker' as false
+	//
+	// If being used, always use math.Max(Calculated_TakerBuyBaseAssetVolume, TakerBuyBaseAssetVolume)
+	Calculated_TakerBuyBaseAssetVolume float64
+
+	// # Not sure if calculated correctly
+	//
+	// Currently calculated via adding to it ONLY if the aggTrade has 'IsMaker' as false
+	//
+	// If being used, always use math.Max(Calculated_TakerBuyQuoteAssetVolume, TakerBuyQuoteAssetVolume)
+	Calculated_TakerBuyQuoteAssetVolume float64
+	Calculated_TradeCount               int64
+
+	AggTrades []*FuturesWS_ManagedCandlestick_AggTrade
+}
+
+type FuturesWS_ManagedCandlestick_AggTrade struct {
+	Timestamp    int64
+	IsMaker      bool
+	AggTradeId   int64
+	FirstTradeId int64
+	LastTradeId  int64
+
+	Price float64
+	Qty   float64
+}
+
+////
+
+func (managedCandlestick_symbol *FuturesWS_ManagedCandlestick_Symbol) handleCandlestick(candlestick *FuturesWS_Candlestick) {
+	intervalValue, _, _, _, parseErr := GetIntervalFromString(candlestick.Kline.Interval)
+	if parseErr != nil {
+		return
+	}
+
+	kline := candlestick.Kline
+	open, err := ParseFloat(kline.Open)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.Open' for '%s', interval '%s' in updateCandlestick", kline.Open, candlestick.Symbol, kline.Interval))
+		return
+	}
+	high, err := ParseFloat(kline.High)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.High' for '%s', interval '%s' in updateCandlestick", kline.High, candlestick.Symbol, kline.Interval))
+		return
+	}
+	low, err := ParseFloat(kline.Low)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.Low' for '%s', interval '%s' in updateCandlestick", kline.Low, candlestick.Symbol, kline.Interval))
+		return
+	}
+	close, err := ParseFloat(kline.Close)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.Close' for '%s', interval '%s' in updateCandlestick", kline.Close, candlestick.Symbol, kline.Interval))
+		return
+	}
+
+	baseAssetVolune, err := ParseFloat(kline.BaseAssetVolume)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.BaseAssetVolume' for '%s', interval '%s' in updateCandlestick", kline.BaseAssetVolume, candlestick.Symbol, kline.Interval))
+		return
+	}
+	quoteAssetVolume, err := ParseFloat(kline.QuoteAssetVolume)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.QuoteAssetVolume' for '%s', interval '%s' in updateCandlestick", kline.QuoteAssetVolume, candlestick.Symbol, kline.Interval))
+		return
+	}
+
+	takerBuyBaseAssetVolume, err := ParseFloat(kline.TakerBuyBaseAssetVolume)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.TakerBuyBaseAssetVolume' for '%s', interval '%s' in updateCandlestick", kline.TakerBuyBaseAssetVolume, candlestick.Symbol, kline.Interval))
+		return
+	}
+	takerBuyQuoteAssetVolume, err := ParseFloat(kline.TakerBuyQuoteAssetVolume)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.TakerBuyQuoteAssetVolume' for '%s', interval '%s' in updateCandlestick", kline.TakerBuyQuoteAssetVolume, candlestick.Symbol, kline.Interval))
+		return
+	}
+
+	newCandlestick := &FuturesWS_Candlestick_Float64{
+		OpenTime:  kline.OpenTime,
+		CloseTime: kline.CloseTime,
+
+		Open:  open,
+		High:  high,
+		Low:   low,
+		Close: close,
+
+		Volume:                   baseAssetVolune,
+		QuoteAssetVolume:         quoteAssetVolume,
+		TakerBuyBaseAssetVolume:  takerBuyBaseAssetVolume,
+		TakerBuyQuoteAssetVolume: takerBuyQuoteAssetVolume,
+	}
+
+	managedCandlestick_symbol.Intervals.Mu.Lock()
+	defer managedCandlestick_symbol.Intervals.Mu.Unlock()
+
+	for _, interval := range managedCandlestick_symbol.Intervals.Map {
+		// # The following makes sure of two things
+		// 1- A candlestick of a higher interval doesn't update candlesticks of a lower interval (like receiving a 3m candle and updating a 1m candle, not ideal for tradecounts and such)
+		// 2- A candlestick of the same interval rune (like 'm' for minutes) can only update similar candlesticks with the same rune IF it divides the interval (a candle of 1m can update 3m candles, but a 3m interval cannot update 5m candles)
+		//
+		// I am aware that since we are doing this, NONE of the Volumes will be updated accurately, lots of overwriting of bad data, but they will be accurate with the aggTrades received, thus the use of math.Max(<candleVolume>, <calculated_candleVolume>) is required
+		// But the point of this is to have as much accuracy as possible, with as little data consumption as possible
+		if interval.Interval.Value < intervalValue { //  || interval.Interval.Value%intervalValue != 0
+			continue
+		}
+
+		interval.handleCandlestick(newCandlestick)
+	}
+
+}
+
+func (managedCandlestick_symbol *FuturesWS_ManagedCandlestick_Symbol) handleAggTrade(aggTrade *FuturesWS_AggTrade) {
+	price, err := ParseFloat(aggTrade.Price)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("Failed to parse aggTrade.price '%s' in AddAggTrade for '%s': %s", aggTrade.Price, aggTrade.Symbol, err.Error()))
+		return
+	}
+	quantity, err := ParseFloat(aggTrade.Quantity)
+	if err != nil {
+		LOG_WS_ERRORS(fmt.Sprintf("Failed to parse aggTrade.quantity '%s' in AddAggTrade for '%s': %s", aggTrade.Price, aggTrade.Symbol, err.Error()))
+		return
+	}
+
+	new_ManagedAggTrade := &FuturesWS_ManagedCandlestick_AggTrade{
+		Timestamp:    aggTrade.Timestamp,
+		IsMaker:      aggTrade.IsMaker,
+		AggTradeId:   aggTrade.AggTradeId,
+		FirstTradeId: aggTrade.FirstTradeId,
+		LastTradeId:  aggTrade.LastTradeId,
+
+		Price: price,
+		Qty:   quantity,
+	}
+
+	managedCandlestick_symbol.AggTrades = append(managedCandlestick_symbol.AggTrades, new_ManagedAggTrade)
+
+	managedCandlestick_symbol.Intervals.Mu.Lock()
+	defer managedCandlestick_symbol.Intervals.Mu.Unlock()
+
+	for _, interval := range managedCandlestick_symbol.Intervals.Map {
+		interval.handleAggTrade(new_ManagedAggTrade)
+	}
+}
+
+////
+
+func (interval *FuturesWS_ManagedCandlestick_Interval) handleCandlestick(newCandlestick *FuturesWS_Candlestick_Float64) {
+	supposed_openTime, supposed_closeTime, err := GetOpenCloseTimes(newCandlestick.OpenTime, interval.Interval.Name)
+	if err != nil {
+		return
+	}
+
+	if len(interval.Candlesticks) == 0 || interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime < supposed_openTime {
+		for {
+			openTime, closeTime := supposed_openTime, supposed_closeTime
+			if len(interval.Candlesticks) != 0 {
+				openTime, closeTime, err = GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].CloseTime+1, interval.Interval.Name)
+				if err != nil {
+					return
+				}
+			}
+
+			new_managedCandlestick := &FuturesWS_ManagedCandlestick{
+				OpenTime:  openTime,
+				CloseTime: closeTime,
+			}
+
+			if len(interval.Candlesticks) != 0 {
+				new_managedCandlestick.Open = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+				new_managedCandlestick.High = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+				new_managedCandlestick.Low = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+				new_managedCandlestick.Close = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+			}
+
+			interval.Candlesticks = append(interval.Candlesticks, new_managedCandlestick)
+
+			if interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime == supposed_openTime {
+				interval.Candlesticks[len(interval.Candlesticks)-1].update(newCandlestick)
+				break
+			}
+		}
+		return
+	}
+
+	for i := len(interval.Candlesticks) - 1; i >= 0; i-- {
+		if interval.Candlesticks[i].OpenTime == supposed_openTime {
+			interval.Candlesticks[i].update(newCandlestick)
+			return
+		}
+	}
+
+	// inserting older candle
+	for {
+		openTime, closeTime, err := GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime-1, interval.Interval.Name)
+		if err != nil {
+			return
+		}
+
+		new_managedCandlestick := &FuturesWS_ManagedCandlestick{
+			OpenTime:  openTime,
+			CloseTime: closeTime,
+
+			Open:  newCandlestick.Open,
+			High:  newCandlestick.Open,
+			Low:   newCandlestick.Open,
+			Close: newCandlestick.Open,
+		}
+
+		if new_managedCandlestick.OpenTime == supposed_openTime {
+			new_managedCandlestick.update(newCandlestick)
+			break
+		}
+
+		interval.Candlesticks = append([]*FuturesWS_ManagedCandlestick{new_managedCandlestick}, interval.Candlesticks...)
+	}
+}
+
+func (candle *FuturesWS_ManagedCandlestick) update(newCandlestick *FuturesWS_Candlestick_Float64) {
+	candle.Open = newCandlestick.Open
+	candle.High = math.Max(candle.High, newCandlestick.High)
+	candle.Low = math.Min(candle.Low, newCandlestick.Low)
+	candle.Close = newCandlestick.Close
+
+	candle.Volume = newCandlestick.Volume
+	candle.QuoteAssetVolume = newCandlestick.QuoteAssetVolume
+	candle.TakerBuyBaseAssetVolume = newCandlestick.TakerBuyBaseAssetVolume
+	candle.TakerBuyQuoteAssetVolume = newCandlestick.TakerBuyQuoteAssetVolume
+}
+
+//
+
+func (interval *FuturesWS_ManagedCandlestick_Interval) handleAggTrade(aggTrade *FuturesWS_ManagedCandlestick_AggTrade) {
+	supposed_openTime, supposed_closeTime, err := GetOpenCloseTimes(aggTrade.Timestamp, interval.Interval.Name)
+	if err != nil {
+		return
+	}
+
+	if len(interval.Candlesticks) == 0 || interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime < supposed_openTime {
+		for {
+			openTime, closeTime := supposed_openTime, supposed_closeTime
+			if len(interval.Candlesticks) != 0 {
+				openTime, closeTime, err = GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].CloseTime+1, interval.Interval.Name)
+				if err != nil {
+					return
+				}
+			}
+
+			new_managedCandlestick := &FuturesWS_ManagedCandlestick{
+				OpenTime:  openTime,
+				CloseTime: closeTime,
+			}
+
+			if len(interval.Candlesticks) != 0 {
+				new_managedCandlestick.Open = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+				new_managedCandlestick.High = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+				new_managedCandlestick.Low = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+				new_managedCandlestick.Close = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+			}
+
+			interval.Candlesticks = append(interval.Candlesticks, new_managedCandlestick)
+
+			if interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime == supposed_openTime {
+				interval.Candlesticks[len(interval.Candlesticks)-1].insertAggTrade(aggTrade)
+				break
+			}
+		}
+		return
+	}
+
+	for i := len(interval.Candlesticks) - 1; i >= 0; i-- {
+		if interval.Candlesticks[i].OpenTime == supposed_openTime {
+			interval.Candlesticks[i].insertAggTrade(aggTrade)
+			return
+		}
+	}
+
+	// inserting older candle
+	for {
+		openTime, closeTime, err := GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime-1, interval.Interval.Name)
+		if err != nil {
+			return
+		}
+
+		new_managedCandlestick := &FuturesWS_ManagedCandlestick{
+			OpenTime:  openTime,
+			CloseTime: closeTime,
+
+			Open:  aggTrade.Price,
+			High:  aggTrade.Price,
+			Low:   aggTrade.Price,
+			Close: aggTrade.Price,
+		}
+
+		if new_managedCandlestick.OpenTime == supposed_openTime {
+			new_managedCandlestick.insertAggTrade(aggTrade)
+			break
+		}
+
+		interval.Candlesticks = append([]*FuturesWS_ManagedCandlestick{new_managedCandlestick}, interval.Candlesticks...)
+	}
+}
+
+func (candle *FuturesWS_ManagedCandlestick) insertAggTrade(managedAggTrade *FuturesWS_ManagedCandlestick_AggTrade) {
+	candle.High = math.Min(candle.High, managedAggTrade.Price)
+	candle.Low = math.Min(candle.Low, managedAggTrade.Price)
+	candle.Close = managedAggTrade.Price
+
+	quoteAsset_size := managedAggTrade.Qty * managedAggTrade.Price
+
+	candle.Calculated_Volume += managedAggTrade.Qty
+	candle.Calculated_QuoteAssetVolume += quoteAsset_size
+
+	if !managedAggTrade.IsMaker {
+		candle.Calculated_TakerBuyBaseAssetVolume += managedAggTrade.Qty
+		candle.Calculated_TakerBuyQuoteAssetVolume += quoteAsset_size
+	}
+
+	candle.Calculated_TradeCount += managedAggTrade.LastTradeId - managedAggTrade.FirstTradeId
+
+	candle.AggTrades = append(candle.AggTrades, managedAggTrade)
+}
+
+////
+
+func (handler *FuturesWS_ManagedCandlesticks_Handler) Subscribe(symbols ...string) (hasTimedOut bool, err *Error) {
+	_, hasTimedOut, err = handler.AggTrades_Socket.Subscribe(symbols...)
+	if err != nil {
+		return hasTimedOut, err
+	}
+
+	params := make([]FuturesWS_Candlestick_Params, len(symbols))
+	for i := range params {
+		params[i].Symbol = symbols[i]
+		params[i].Interval = "1m" // the smallest interval on futures
+	}
+	_, hasTimedOut, err = handler.Candlesticks_Socket.Subscribe(params...)
+
+	handler.addSymbols(symbols...)
+
+	return hasTimedOut, err
+}
+
+func (handler *FuturesWS_ManagedCandlesticks_Handler) Unsubscribe(symbols ...string) (hasTimedOut bool, err *Error) {
+	_, hasTimedOut, err = handler.AggTrades_Socket.Unsubscribe(symbols...)
+	if err != nil {
+		return hasTimedOut, err
+	}
+
+	params := make([]FuturesWS_Candlestick_Params, len(symbols))
+	for i := range params {
+		params[i].Symbol = symbols[i]
+		params[i].Interval = "1m" // the smallest interval on futures
+	}
+	_, hasTimedOut, err = handler.Candlesticks_Socket.Unsubscribe(params...)
+
+	handler.removeSymbols(symbols...)
+
+	return hasTimedOut, err
+}
+
+////
+
+func (handler *FuturesWS_ManagedCandlesticks_Handler) onCandlestick(candlestick *FuturesWS_Candlestick) *FuturesWS_ManagedCandlestick_Symbol {
+	handler.Candlesticks.Mu.Lock()
+	defer handler.Candlesticks.Mu.Unlock()
+
+	symbol, exists := handler.Candlesticks.Symbols[candlestick.Symbol]
+	if !exists {
+		return nil
+	}
+
+	symbol.handleCandlestick(candlestick)
+
+	return symbol
+}
+
+func (handler *FuturesWS_ManagedCandlesticks_Handler) onAggTrade(aggTrade *FuturesWS_AggTrade) *FuturesWS_ManagedCandlestick_Symbol {
+	handler.Candlesticks.Mu.Lock()
+	defer handler.Candlesticks.Mu.Unlock()
+
+	symbol, exists := handler.Candlesticks.Symbols[aggTrade.Symbol]
+	if !exists {
+		return nil
+	}
+
+	symbol.handleAggTrade(aggTrade)
+
+	return symbol
+}
+
+func (handler *FuturesWS_ManagedCandlesticks_Handler) addSymbols(symbols ...string) {
+	handler.Candlesticks.Mu.Lock()
+	defer handler.Candlesticks.Mu.Unlock()
+
+	for _, symbol := range symbols {
+		_, exists := handler.Candlesticks.Symbols[symbol]
+		if exists {
+			continue
+		}
+
+		managedCandlestick_symbol := &FuturesWS_ManagedCandlestick_Symbol{}
+		managedCandlestick_symbol.Symbol = symbol
+		managedCandlestick_symbol.AggTrades = make([]*FuturesWS_ManagedCandlestick_AggTrade, 0)
+
+		managedCandlestick_symbol.Intervals.Map = make(map[string]*FuturesWS_ManagedCandlestick_Interval)
+
+		managedCandlestick_symbol.Intervals.Mu.Lock()
+		defer managedCandlestick_symbol.Intervals.Mu.Unlock()
+		for _, interval := range handler.intervals {
+			managedCandlestick_symbol.Intervals.Map[interval.Name] = &FuturesWS_ManagedCandlestick_Interval{
+				Interval:     interval,
+				Candlesticks: make([]*FuturesWS_ManagedCandlestick, 0),
+			}
+		}
+
+		handler.Candlesticks.Symbols[symbol] = managedCandlestick_symbol
+	}
+}
+
+func (handler *FuturesWS_ManagedCandlesticks_Handler) removeSymbols(symbols ...string) {
+	handler.Candlesticks.Mu.Lock()
+	defer handler.Candlesticks.Mu.Unlock()
+
+	for _, symbol := range symbols {
+		delete(handler.Candlesticks.Symbols, symbol)
+	}
+}
+
+// # WARNING
+//
+// This function is custom made for SPECIFIC purposes!
+func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage func(symbol *FuturesWS_ManagedCandlestick_Symbol), customIntervals []string, symbols ...string) (*FuturesWS_ManagedCandlesticks_Handler, *Error) {
+	handler := &FuturesWS_ManagedCandlesticks_Handler{}
+
+	handler.intervals = append(handler.intervals,
+		&FuturesWS_Interval{Name: "1m", Multiplier: 1, Rune: 'm', Value: 1 * MINUTE},
+		&FuturesWS_Interval{Name: "3m", Multiplier: 3, Rune: 'm', Value: 3 * MINUTE},
+		&FuturesWS_Interval{Name: "5m", Multiplier: 5, Rune: 'm', Value: 5 * MINUTE},
+		&FuturesWS_Interval{Name: "15m", Multiplier: 15, Rune: 'm', Value: 15 * MINUTE},
+		&FuturesWS_Interval{Name: "30m", Multiplier: 30, Rune: 'm', Value: 30 * MINUTE},
+		&FuturesWS_Interval{Name: "1h", Multiplier: 1, Rune: 'h', Value: 1 * HOUR},
+		&FuturesWS_Interval{Name: "2h", Multiplier: 2, Rune: 'h', Value: 2 * HOUR},
+		&FuturesWS_Interval{Name: "4h", Multiplier: 4, Rune: 'h', Value: 4 * HOUR},
+		&FuturesWS_Interval{Name: "6h", Multiplier: 6, Rune: 'h', Value: 6 * HOUR},
+		&FuturesWS_Interval{Name: "8h", Multiplier: 8, Rune: 'h', Value: 8 * HOUR},
+		&FuturesWS_Interval{Name: "12h", Multiplier: 12, Rune: 'h', Value: 12 * HOUR},
+		&FuturesWS_Interval{Name: "1d", Multiplier: 1, Rune: 'd', Value: 1 * DAY},
+		&FuturesWS_Interval{Name: "3d", Multiplier: 3, Rune: 'd', Value: 3 * DAY},
+		&FuturesWS_Interval{Name: "1w", Multiplier: 1, Rune: 'w', Value: 0},
+		&FuturesWS_Interval{Name: "1M", Multiplier: 1, Rune: 'M', Value: 0},
+
+		&FuturesWS_Interval{Name: "1s", Multiplier: 1, Rune: 's', Value: 1 * SECOND, Custom: true},
+		&FuturesWS_Interval{Name: "15s", Multiplier: 15, Rune: 's', Value: 15 * SECOND, Custom: true},
+		&FuturesWS_Interval{Name: "30s", Multiplier: 30, Rune: 's', Value: 30 * SECOND, Custom: true},
+		&FuturesWS_Interval{Name: "1Y", Multiplier: 1, Rune: 'Y', Value: 0, Custom: true},
+	)
+	for _, customInterval := range customIntervals {
+		found := false
+		for _, interval := range handler.intervals {
+			if interval.Name == customInterval {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		}
+		intervalValue, multiplier, intervalRune, _, parseErr := GetIntervalFromString(customInterval)
+		if parseErr != nil {
+			return handler, LocalError(PARSING_ERR, fmt.Sprintf("Failed to parse custom interval '%s': %s", customInterval, parseErr.Error()))
+		}
+		handler.intervals = append(handler.intervals, &FuturesWS_Interval{Name: customInterval, Multiplier: multiplier, Rune: intervalRune, Value: intervalValue, Custom: true})
+	}
+
+	handler.Candlesticks.Symbols = make(map[string]*FuturesWS_ManagedCandlestick_Symbol)
+
+	handler.addSymbols(symbols...)
+
+	//
+
+	params := make([]FuturesWS_Candlestick_Params, len(symbols))
+	for i := range symbols {
+		params[i].Symbol = symbols[i]
+		params[i].Interval = "1m" // smallest interval in futures
+	}
+	candlesticks_socket, err := futures_ws.Candlesticks(
+		func(candlestick *FuturesWS_Candlestick) {
+			symbol := handler.onCandlestick(candlestick)
+			if symbol != nil {
+				publicOnMessage(symbol)
+			}
+		},
+		params...,
+	)
+	if err != nil {
+		return handler, err
+	}
+
+	aggTrade_socket, err := futures_ws.AggTrade(
+		func(aggTrade *FuturesWS_AggTrade) {
+			symbol := handler.onAggTrade(aggTrade)
+			if symbol != nil {
+				publicOnMessage(symbol)
+			}
+		},
+		symbols...,
+	)
+	if err != nil {
+		candlesticks_socket.Handler.Close()
+		return handler, err
+	}
+
+	handler.AggTrades_Socket = aggTrade_socket
+	handler.Candlesticks_Socket = candlesticks_socket
 
 	return handler, nil
 }

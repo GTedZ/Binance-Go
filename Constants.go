@@ -16,12 +16,13 @@ var STATIC_INTERVAL_CHARS = map[rune]int64{
 	'm': MINUTE,
 	'h': HOUR,
 	'd': DAY,
-	'w': WEEK,
 }
 var COMPLEX_INTERVALS = struct {
+	WEEK  rune
 	MONTH rune
 	YEAR  rune
 }{
+	WEEK:  'w',
 	MONTH: 'M',
 	YEAR:  'Y',
 }
