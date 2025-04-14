@@ -192,10 +192,10 @@ func ParseSpotExchangeInfo(exchangeInfo_response *Response) (*Spot_ExchangeInfo,
 		return nil, LocalError(PARSING_ERR, err.Error())
 	}
 
-	exchangeInfo.Symbols = make(map[string]*Spot_Symbol)
+	exchangeInfo.Symbols.Map = make(map[string]*Spot_Symbol)
 
 	for _, symbol_obj := range exchangeInfo.Symbols_arr {
-		exchangeInfo.Symbols[symbol_obj.Symbol] = symbol_obj
+		exchangeInfo.Symbols.Map[symbol_obj.Symbol] = symbol_obj
 	}
 
 	return &exchangeInfo, nil

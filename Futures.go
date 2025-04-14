@@ -105,14 +105,14 @@ func ParseFuturesExchangeInfo(exchangeInfo_response *Response) (*Futures_Exchang
 		return nil, LocalError(PARSING_ERR, err.Error())
 	}
 
-	exchangeInfo.Symbols = make(map[string]*Futures_Symbol)
+	exchangeInfo.Symbols.Map = make(map[string]*Futures_Symbol)
 	for _, symbol_obj := range exchangeInfo.Symbols_arr {
-		exchangeInfo.Symbols[symbol_obj.Symbol] = symbol_obj
+		exchangeInfo.Symbols.Map[symbol_obj.Symbol] = symbol_obj
 	}
 
-	exchangeInfo.Assets = make(map[string]*Futures_Asset)
+	exchangeInfo.Assets.Map = make(map[string]*Futures_Asset)
 	for _, asset_obj := range exchangeInfo.Assets_arr {
-		exchangeInfo.Assets[asset_obj.Asset] = asset_obj
+		exchangeInfo.Assets.Map[asset_obj.Asset] = asset_obj
 	}
 
 	return &exchangeInfo, nil

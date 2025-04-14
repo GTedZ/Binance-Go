@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 )
 
 var SPOT_Constants = struct {
@@ -766,8 +767,11 @@ type Spot_ExchangeInfo struct {
 	RateLimits      []*Spot_RateLimitType `json:"rateLimits"`
 	ExchangeFilters *Spot_ExchangeFilters
 	Symbols_arr     []*Spot_Symbol `json:"symbols"`
-	Symbols         map[string]*Spot_Symbol
-	Sors            []*Spot_ExchangeInfo_SORS `json:"sors"`
+	Symbols         struct {
+		Mu  sync.Mutex
+		Map map[string]*Spot_Symbol
+	}
+	Sors []*Spot_ExchangeInfo_SORS `json:"sors"`
 }
 
 type Spot_OrderBook struct {

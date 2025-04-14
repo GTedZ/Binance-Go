@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 )
 
 var FUTURES_Constants = struct {
@@ -646,8 +647,14 @@ type Futures_ExchangeInfo struct {
 	Symbols_arr     []*Futures_Symbol        `json:"symbols"`
 	Timezone        string                   `json:"timezone"`
 
-	Assets  map[string]*Futures_Asset
-	Symbols map[string]*Futures_Symbol
+	Assets struct {
+		Mu  sync.Mutex
+		Map map[string]*Futures_Asset
+	}
+	Symbols struct {
+		Mu  sync.Mutex
+		Map map[string]*Futures_Symbol
+	}
 }
 
 type Futures_OrderBook struct {
