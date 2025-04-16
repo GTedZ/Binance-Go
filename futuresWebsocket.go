@@ -1930,6 +1930,7 @@ type FuturesWS_ManagedCandlesticks_Symbol struct {
 		Mu  sync.Mutex
 		Map map[string]*FuturesWS_ManagedCandlesticks_Interval
 	}
+	OnChange *Event[*FuturesWS_ManagedCandlesticks_Symbol]
 }
 
 type FuturesWS_ManagedCandlesticks_Interval struct {
@@ -2511,7 +2512,10 @@ func (handler *FuturesWS_ManagedCandlesticks_Handler) addSymbols(symbols ...stri
 			continue
 		}
 
-		managedCandlestick_symbol := &FuturesWS_ManagedCandlesticks_Symbol{parent: handler}
+		managedCandlestick_symbol := &FuturesWS_ManagedCandlesticks_Symbol{
+			parent:   handler,
+			OnChange: New[*FuturesWS_ManagedCandlesticks_Symbol](),
+		}
 		managedCandlestick_symbol.Symbol = symbol
 		managedCandlestick_symbol.AggTrades = make([]*FuturesWS_ManagedCandlesticks_AggTrade, 0)
 
@@ -2628,9 +2632,11 @@ func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage
 		candlesticks_socket, err = futures_ws.Candlesticks(
 			func(candlestick *FuturesWS_Candlestick) {
 				handler.Candlesticks.Mu.Lock()
+				defer handler.Candlesticks.Mu.Unlock()
+
 				symbol := handler.onCandlestick(candlestick)
-				handler.Candlesticks.Mu.Unlock()
 				if symbol != nil {
+					symbol.OnChange.Emit(symbol)
 					publicOnMessage(symbol)
 				}
 			},
@@ -2645,9 +2651,11 @@ func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage
 	aggTrade_socket, err := futures_ws.AggTrade(
 		func(aggTrade *FuturesWS_AggTrade) {
 			handler.Candlesticks.Mu.Lock()
+			defer handler.Candlesticks.Mu.Unlock()
+
 			symbol := handler.onAggTrade(aggTrade)
-			handler.Candlesticks.Mu.Unlock()
 			if symbol != nil {
+				symbol.OnChange.Emit(symbol)
 				publicOnMessage(symbol)
 			}
 		},
