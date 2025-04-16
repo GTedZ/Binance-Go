@@ -1900,11 +1900,13 @@ func (futures_ws *Futures_Websockets) Managed_OrderBook(publicOnMessage func(ord
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type FuturesWS_ManagedCandlesticks_Handler struct {
-	futures_ws          *Futures_Websockets
+	futures_ws *Futures_Websockets
+
 	Candlesticks_Socket *FuturesWS_Candlesticks_Socket
 	AggTrades_Socket    *FuturesWS_AggTrade_Socket
 
-	intervals []*FuturesWS_Interval
+	intervals      []*FuturesWS_Interval
+	aggTrades_only bool
 
 	Candlesticks struct {
 		Mu      sync.Mutex
@@ -2540,6 +2542,12 @@ func (handler *FuturesWS_ManagedCandlesticks_Handler) RemoveSymbols(symbols ...s
 	}
 }
 
+// These parameters are optional, not necessary to be filled out
+type Managed_CustomCandlesticks_Params struct {
+	AggTrades_stream_only bool
+	customIntervals       []string
+}
+
 // # WARNING
 //
 // This function is custom made for SPECIFIC purposes!
@@ -2554,9 +2562,19 @@ func (handler *FuturesWS_ManagedCandlesticks_Handler) RemoveSymbols(symbols ...s
 // This happens due to the fact that the aggTrade and candlestick stream might've began in the middle of the candlestick's interval; using FuturesWS_ManageCandlesticks_Symbol.Fetch_Older_Candlesticks() fixes this.
 //
 // The library also 'creates' a new candlestick if the aggTrade stream pushed an aggTrade that falls within a newer candlestick than locally present, the OpenTime (although tested to be correct) might be incorrectly calculated, so help double checking here might be helpful.
-func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage func(symbol *FuturesWS_ManagedCandlesticks_Symbol), customIntervals []string, symbols ...string) (*FuturesWS_ManagedCandlesticks_Handler, *Error) {
+func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage func(symbol *FuturesWS_ManagedCandlesticks_Symbol), opt_params *Managed_CustomCandlesticks_Params, symbols ...string) (*FuturesWS_ManagedCandlesticks_Handler, *Error) {
 	handler := &FuturesWS_ManagedCandlesticks_Handler{}
 	handler.futures_ws = futures_ws
+
+	handler.aggTrades_only = false
+	if opt_params != nil {
+		handler.aggTrades_only = opt_params.AggTrades_stream_only
+	}
+
+	customIntervals := []string{}
+	if opt_params != nil && opt_params.customIntervals != nil {
+		customIntervals = opt_params.customIntervals
+	}
 
 	handler.intervals = append(handler.intervals,
 		&FuturesWS_Interval{Name: "1m", Multiplier: 1, Rune: 'm', Value: 1 * MINUTE},
@@ -2609,17 +2627,24 @@ func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage
 		params[i].Symbol = symbols[i]
 		params[i].Interval = "1m" // smallest interval in futures
 	}
-	candlesticks_socket, err := futures_ws.Candlesticks(
-		func(candlestick *FuturesWS_Candlestick) {
-			symbol := handler.onCandlestick(candlestick)
-			if symbol != nil {
-				publicOnMessage(symbol)
-			}
-		},
-		params...,
-	)
-	if err != nil {
-		return handler, err
+
+	var candlesticks_socket *FuturesWS_Candlesticks_Socket
+	var err *Error
+
+	if !handler.aggTrades_only {
+		candlesticks_socket, err = futures_ws.Candlesticks(
+			func(candlestick *FuturesWS_Candlestick) {
+				symbol := handler.onCandlestick(candlestick)
+				if symbol != nil {
+					publicOnMessage(symbol)
+				}
+			},
+			params...,
+		)
+		if err != nil {
+			return handler, err
+		}
+		handler.Candlesticks_Socket = candlesticks_socket
 	}
 
 	aggTrade_socket, err := futures_ws.AggTrade(
@@ -2632,12 +2657,13 @@ func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage
 		symbols...,
 	)
 	if err != nil {
-		candlesticks_socket.Handler.Close()
+		if candlesticks_socket != nil {
+			candlesticks_socket.Handler.Close()
+		}
 		return handler, err
 	}
 
 	handler.AggTrades_Socket = aggTrade_socket
-	handler.Candlesticks_Socket = candlesticks_socket
 
 	return handler, nil
 }
