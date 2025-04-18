@@ -2366,6 +2366,7 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleAggTrade(aggTrade 
 	}
 
 	if len(interval.Candlesticks) == 0 {
+		new_managedCandlestick := &FuturesWS_ManagedCandlestick{
 			OpenTime:  supposed_openTime,
 			CloseTime: supposed_closeTime,
 
