@@ -2443,7 +2443,7 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleAggTrade(aggTrade 
 }
 
 func (candle *FuturesWS_ManagedCandlestick) insertAggTrade(managedAggTrade *FuturesWS_ManagedCandlesticks_AggTrade) {
-	candle.High = math.Min(candle.High, managedAggTrade.Price)
+	candle.High = math.Max(candle.High, managedAggTrade.Price)
 	candle.Low = math.Min(candle.Low, managedAggTrade.Price)
 	candle.Close = managedAggTrade.Price
 
