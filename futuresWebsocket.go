@@ -2153,12 +2153,11 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Newest_Candlestick
 		return err
 	}
 
-	for _, newRawCandlestick := range newRawCandlesticks {
-		newCandlestick := parseFloat_Futures_Candlestick(newRawCandlestick)
+	for i := len(newRawCandlesticks) - 1; i >= 0; i-- {
+		newCandlestick := parseFloat_Futures_Candlestick(newRawCandlesticks[i])
 		if newCandlestick == nil {
 			continue
 		}
-
 		interval.handleCandlestick(newCandlestick)
 	}
 
@@ -2187,12 +2186,11 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Older_Candlesticks
 		return err
 	}
 
-	for _, newRawCandlestick := range newRawCandlesticks {
-		newCandlestick := parseFloat_Futures_Candlestick(newRawCandlestick)
+	for i := len(newRawCandlesticks) - 1; i >= 0; i-- {
+		newCandlestick := parseFloat_Futures_Candlestick(newRawCandlesticks[i])
 		if newCandlestick == nil {
 			continue
 		}
-
 		interval.handleCandlestick(newCandlestick)
 	}
 
@@ -2321,7 +2319,8 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleCandlestick(newCan
 
 	// inserting older candle
 	for {
-		openTime, closeTime, err := GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime-1, interval.Interval.Name)
+		firstCandle := interval.Candlesticks[0]
+		openTime, closeTime, err := GetOpenCloseTimes(firstCandle.OpenTime-1, interval.Interval.Name)
 		if err != nil {
 			return
 		}
@@ -2366,14 +2365,26 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleAggTrade(aggTrade 
 		return
 	}
 
-	if len(interval.Candlesticks) == 0 || interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime < supposed_openTime {
+	if len(interval.Candlesticks) == 0 {
+			OpenTime:  supposed_openTime,
+			CloseTime: supposed_closeTime,
+
+			Open:  aggTrade.Price,
+			High:  aggTrade.Price,
+			Low:   aggTrade.Price,
+			Close: aggTrade.Price,
+		}
+
+		new_managedCandlestick.insertAggTrade(aggTrade)
+		interval.Candlesticks = append(interval.Candlesticks, new_managedCandlestick)
+		return
+	}
+
+	if interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime < supposed_openTime {
 		for {
-			openTime, closeTime := supposed_openTime, supposed_closeTime
-			if len(interval.Candlesticks) != 0 {
-				openTime, closeTime, err = GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].CloseTime+1, interval.Interval.Name)
-				if err != nil {
-					return
-				}
+			openTime, closeTime, err := GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].CloseTime+1, interval.Interval.Name)
+			if err != nil {
+				return
 			}
 
 			new_managedCandlestick := &FuturesWS_ManagedCandlestick{
@@ -2381,17 +2392,15 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleAggTrade(aggTrade 
 				CloseTime: closeTime,
 			}
 
-			if len(interval.Candlesticks) != 0 {
-				new_managedCandlestick.Open = interval.Candlesticks[len(interval.Candlesticks)-1].Close
-				new_managedCandlestick.High = interval.Candlesticks[len(interval.Candlesticks)-1].Close
-				new_managedCandlestick.Low = interval.Candlesticks[len(interval.Candlesticks)-1].Close
-				new_managedCandlestick.Close = interval.Candlesticks[len(interval.Candlesticks)-1].Close
-			}
+			new_managedCandlestick.Open = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+			new_managedCandlestick.High = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+			new_managedCandlestick.Low = interval.Candlesticks[len(interval.Candlesticks)-1].Close
+			new_managedCandlestick.Close = interval.Candlesticks[len(interval.Candlesticks)-1].Close
 
 			interval.Candlesticks = append(interval.Candlesticks, new_managedCandlestick)
 
-			if interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime == supposed_openTime {
-				interval.Candlesticks[len(interval.Candlesticks)-1].insertAggTrade(aggTrade)
+			if new_managedCandlestick.OpenTime == supposed_openTime {
+				new_managedCandlestick.insertAggTrade(aggTrade)
 				break
 			}
 		}
@@ -2407,7 +2416,8 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleAggTrade(aggTrade 
 
 	// inserting older candle
 	for {
-		openTime, closeTime, err := GetOpenCloseTimes(interval.Candlesticks[len(interval.Candlesticks)-1].OpenTime-1, interval.Interval.Name)
+		firstCandle := interval.Candlesticks[0]
+		openTime, closeTime, err := GetOpenCloseTimes(firstCandle.OpenTime-1, interval.Interval.Name)
 		if err != nil {
 			return
 		}
@@ -2416,10 +2426,10 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleAggTrade(aggTrade 
 			OpenTime:  openTime,
 			CloseTime: closeTime,
 
-			Open:  aggTrade.Price,
-			High:  aggTrade.Price,
-			Low:   aggTrade.Price,
-			Close: aggTrade.Price,
+			Open:  firstCandle.Open,
+			High:  firstCandle.Open,
+			Low:   firstCandle.Open,
+			Close: firstCandle.Open,
 		}
 
 		if new_managedCandlestick.OpenTime == supposed_openTime {
