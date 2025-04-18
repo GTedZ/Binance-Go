@@ -2322,7 +2322,7 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleCandlestick(newCan
 		firstCandle := interval.Candlesticks[0]
 		openTime, closeTime, err := GetOpenCloseTimes(firstCandle.OpenTime-1, interval.Interval.Name)
 		if err != nil {
-			return
+			continue
 		}
 
 		new_managedCandlestick := &FuturesWS_ManagedCandlestick{
@@ -2335,12 +2335,12 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) handleCandlestick(newCan
 			Close: newCandlestick.Open,
 		}
 
+		interval.Candlesticks = append([]*FuturesWS_ManagedCandlestick{new_managedCandlestick}, interval.Candlesticks...)
+
 		if new_managedCandlestick.OpenTime == supposed_openTime {
 			new_managedCandlestick.update(newCandlestick)
 			break
 		}
-
-		interval.Candlesticks = append([]*FuturesWS_ManagedCandlestick{new_managedCandlestick}, interval.Candlesticks...)
 	}
 }
 
