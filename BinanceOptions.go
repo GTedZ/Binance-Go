@@ -1,6 +1,7 @@
 package Binance
 
 type BinanceOptions struct {
+	// TODO: need to implement this ASAP!
 	updateTimestampOffset bool
 	recvWindow            int64
 }

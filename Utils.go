@@ -8,51 +8,61 @@ import (
 	"time"
 )
 
-func GetIntervalFromString(interval string) (intervalValue int64, multiplier int64, intervalRune rune, exists bool, parseErr error) {
+func GetIntervalFromString(intervalStr string) (interval *Binance_Interval, exists bool, err *Error) {
 	// Fetch the last character
-	intervalRune = rune(interval[len(interval)-1])
+	intervalRune := rune(intervalStr[len(intervalStr)-1])
 
 	// Parse the rest of the string (excluding the last character) as an integer
-	restOfString := interval[:len(interval)-1]
-	multiplier, parseErr = ParseInt(restOfString)
+	restOfString := intervalStr[:len(intervalStr)-1]
+
+	var parseErr error
+	multiplier, parseErr := ParseInt(restOfString)
 	if parseErr != nil {
-		return 0, 0, 0, false, LocalError(PARSING_ERR, parseErr.Error())
+		return nil, false, LocalError(PARSING_ERR, parseErr.Error())
 	}
 
 	INTERVALS_mu.Lock()
 	defer INTERVALS_mu.Unlock()
 
-	intervalValue, exists = STATIC_INTERVAL_CHARS[intervalRune]
+	intervalValue, exists := STATIC_INTERVAL_CHARS[intervalRune]
 
-	return intervalValue, multiplier, intervalRune, exists, nil
+	interval = &Binance_Interval{
+		Name:       intervalStr,
+		Rune:       intervalRune,
+		BaseValue:  intervalValue,
+		Multiplier: multiplier,
+		Value:      intervalValue * multiplier,
+	}
+
+	return interval, exists, nil
 }
 
 func GetOpenCloseTimes(currentTime int64, interval string) (openTime int64, closeTime int64, err *Error) {
 
-	intervalValue, multiplier, intervalRune, exists, parseErr := GetIntervalFromString(interval)
+	binanceInterval, exists, parseErr := GetIntervalFromString(interval)
 
 	if parseErr != nil {
 		LocalError(PARSING_ERR, fmt.Sprintf("Error parsing integer: %s", parseErr.Error()))
 		return 0, 0, LocalError(PARSING_ERR, parseErr.Error())
 	}
 
-	if multiplier <= 0 {
-		return 0, 0, LocalError(INVALID_VALUE_ERR, fmt.Sprintf("Multiplier value of '%d' must be greater than 0 in '%s' is invalid", multiplier, interval))
+	if binanceInterval.Multiplier <= 0 {
+		return 0, 0, LocalError(INVALID_VALUE_ERR, fmt.Sprintf("Multiplier value of '%d' must be greater than 0 in '%s' is invalid", binanceInterval.Multiplier, interval))
 	}
 
 	INTERVALS_mu.Lock()
 	defer INTERVALS_mu.Unlock()
 
 	if exists {
-		openTime = currentTime - (currentTime % (intervalValue * multiplier))
-		closeTime = openTime + (intervalValue * multiplier) - 1
+		openTime = currentTime - (currentTime % binanceInterval.Value)
+		closeTime = openTime + binanceInterval.Value - 1
 		return openTime, closeTime, nil
 	}
 
 	baseUnix_time_obj := time.Unix(0, 0)
 	current_time_obj := time.Unix(0, currentTime*int64(time.Millisecond))
 
-	switch intervalRune {
+	switch binanceInterval.Rune {
 	case COMPLEX_INTERVALS.WEEK:
 		weekDay_offset := int(current_time_obj.Weekday() - time.Monday)
 		monday_time := current_time_obj.AddDate(0, 0, weekDay_offset).UnixMilli()
@@ -63,8 +73,8 @@ func GetOpenCloseTimes(currentTime int64, interval string) (openTime int64, clos
 
 		timestamp_to_check := monday_time + unixFirstWeek_offset
 
-		openTime = timestamp_to_check - (timestamp_to_check % (WEEK * multiplier))
-		closeTime = openTime + (WEEK * multiplier) - 1
+		openTime = timestamp_to_check - (timestamp_to_check % (WEEK * binanceInterval.Multiplier))
+		closeTime = openTime + (WEEK * binanceInterval.Multiplier) - 1
 
 		return openTime - unixFirstWeek_offset, closeTime - unixFirstWeek_offset, nil
 	case COMPLEX_INTERVALS.MONTH:
@@ -72,10 +82,10 @@ func GetOpenCloseTimes(currentTime int64, interval string) (openTime int64, clos
 		currentMonthNumber := int(current_time_obj.Month() - 1)
 		monthsSinceEpoch := yearNumber*12 + currentMonthNumber
 
-		monthsToRemoveFromCurrentTime := monthsSinceEpoch % int(multiplier)
+		monthsToRemoveFromCurrentTime := monthsSinceEpoch % int(binanceInterval.Multiplier)
 
 		openTime_date := time.Date(current_time_obj.Year(), current_time_obj.Month()-time.Month(monthsToRemoveFromCurrentTime), 1, 0, 0, 0, 0, time.UTC)
-		closeTime_date := time.Date(current_time_obj.Year(), current_time_obj.Month()-time.Month(monthsToRemoveFromCurrentTime)+time.Month(multiplier), 1, 0, 0, 0, 0, time.UTC)
+		closeTime_date := time.Date(current_time_obj.Year(), current_time_obj.Month()-time.Month(monthsToRemoveFromCurrentTime)+time.Month(binanceInterval.Multiplier), 1, 0, 0, 0, 0, time.UTC)
 
 		openTime = openTime_date.UnixMilli()
 		closeTime = closeTime_date.UnixMilli() - 1
@@ -84,10 +94,10 @@ func GetOpenCloseTimes(currentTime int64, interval string) (openTime int64, clos
 	case COMPLEX_INTERVALS.YEAR:
 		yearNumber := current_time_obj.Year() - 1970
 
-		yearsToRemoveFromCurrentTime := yearNumber - (yearNumber % int(multiplier))
+		yearsToRemoveFromCurrentTime := yearNumber - (yearNumber % int(binanceInterval.Multiplier))
 
 		openTime_date := time.Date(current_time_obj.Year()-yearsToRemoveFromCurrentTime, time.January, 1, 0, 0, 0, 0, time.UTC)
-		closeTime_date := time.Date(current_time_obj.Year()-yearsToRemoveFromCurrentTime+int(multiplier), time.January, 1, 0, 0, 0, 0, time.UTC)
+		closeTime_date := time.Date(current_time_obj.Year()-yearsToRemoveFromCurrentTime+int(binanceInterval.Multiplier), time.January, 1, 0, 0, 0, 0, time.UTC)
 
 		openTime = openTime_date.UnixMilli()
 		closeTime = closeTime_date.UnixMilli() - 1
@@ -95,7 +105,7 @@ func GetOpenCloseTimes(currentTime int64, interval string) (openTime int64, clos
 		return openTime, closeTime, nil
 	}
 
-	return 0, 0, LocalError(INVALID_VALUE_ERR, fmt.Sprintf("Invalid interval rune of '%s' is invalid in '%s' is invalid", string(intervalRune), interval))
+	return 0, 0, LocalError(INVALID_VALUE_ERR, fmt.Sprintf("Invalid interval rune of '%s' is invalid in '%s' is invalid", string(binanceInterval.Rune), interval))
 }
 
 func ParseInt(intStr string) (int64, error) {

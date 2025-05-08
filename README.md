@@ -3,6 +3,9 @@
 
 ## TODO v1.0.0
 
+### LOGGING
+Fix the atrocious logging
+
 ### SPOT
  - Finish the implementation of all REST and WS endpoints
  - Websocket API

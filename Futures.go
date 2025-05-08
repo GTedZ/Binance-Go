@@ -15,6 +15,8 @@ type Futures struct {
 	API APIKEYS
 
 	Websockets Futures_Websockets
+
+	Custom futures_Custom_Methods
 }
 
 func (futures *Futures) init(binance *Binance) {
@@ -28,6 +30,16 @@ func (futures *Futures) init(binance *Binance) {
 	futures.API.Set(binance.API.KEY, binance.API.SECRET)
 
 	futures.Websockets.binance = binance
+
+	futures.Custom.init(futures)
+}
+
+type futures_Custom_Methods struct {
+	parent *Futures
+}
+
+func (customMethods *futures_Custom_Methods) init(parent *Futures) {
+	customMethods.parent = parent
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -361,7 +373,7 @@ type Futures_Candlesticks_Params struct {
 	Limit int64
 }
 
-func (futures *Futures) Candlesticks(symbol string, interval string, opt_params ...*Futures_Candlesticks_Params) ([]*Futures_Candlestick, *Response, *Error) {
+func (futures *Futures) Candlesticks(symbol string, interval string, opt_params ...Futures_Candlesticks_Params) ([]*Futures_Candlestick, *Response, *Error) {
 	opts := make(map[string]interface{})
 
 	opts["symbol"] = symbol
@@ -426,7 +438,7 @@ func (futures *Futures) Candlesticks(symbol string, interval string, opt_params 
 //
 // Contract Types:
 // "PERPETUAL" | "CURRENT_QUARTER" | "NEXT_QUARTER"
-func (futures *Futures) ContinuousContractCandlesticks(symbol string, contractType string, interval string, opt_params ...*Futures_Candlesticks_Params) ([]*Futures_Candlestick, *Response, *Error) {
+func (futures *Futures) ContinuousContractCandlesticks(symbol string, contractType string, interval string, opt_params ...Futures_Candlesticks_Params) ([]*Futures_Candlestick, *Response, *Error) {
 	opts := make(map[string]interface{})
 
 	opts["symbol"] = symbol
@@ -493,7 +505,7 @@ type Futures_PriceCandlesticks_Params struct {
 	Limit int64
 }
 
-func (futures *Futures) IndexPriceCandlesticks(symbol string, interval string, opt_params ...*Futures_PriceCandlesticks_Params) ([]*Futures_PriceCandlestick, *Response, *Error) {
+func (futures *Futures) IndexPriceCandlesticks(symbol string, interval string, opt_params ...Futures_PriceCandlesticks_Params) ([]*Futures_PriceCandlestick, *Response, *Error) {
 	opts := make(map[string]interface{})
 
 	opts["symbol"] = symbol
@@ -552,7 +564,7 @@ func (futures *Futures) IndexPriceCandlesticks(symbol string, interval string, o
 
 /////////////////////////////////////////////////////////////////////////////////
 
-func (futures *Futures) MarkPriceCandlesticks(symbol string, contractType string, interval string, opt_params ...*Futures_PriceCandlesticks_Params) ([]*Futures_PriceCandlestick, *Response, *Error) {
+func (futures *Futures) MarkPriceCandlesticks(symbol string, contractType string, interval string, opt_params ...Futures_PriceCandlesticks_Params) ([]*Futures_PriceCandlestick, *Response, *Error) {
 	opts := make(map[string]interface{})
 
 	opts["symbol"] = symbol
@@ -611,7 +623,7 @@ func (futures *Futures) MarkPriceCandlesticks(symbol string, contractType string
 
 /////////////////////////////////////////////////////////////////////////////////
 
-func (futures *Futures) PremiumIndexCandlesticks(symbol string, contractType string, interval string, opt_params ...*Futures_PriceCandlesticks_Params) ([]*Futures_PriceCandlestick, *Response, *Error) {
+func (futures *Futures) PremiumIndexCandlesticks(symbol string, contractType string, interval string, opt_params ...Futures_PriceCandlesticks_Params) ([]*Futures_PriceCandlestick, *Response, *Error) {
 	opts := make(map[string]interface{})
 
 	opts["symbol"] = symbol
@@ -1476,6 +1488,52 @@ func (futures *Futures) LeverageBrackets(symbol ...string) ([]*Futures_LeverageB
 		return nil, resp, LocalError(PARSING_ERR, processingErr.Error())
 	}
 	return leverageBrackets, resp, nil
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+func (customMethods *futures_Custom_Methods) Fetch_Candlesticks(symbol string, interval string, startTime int64, endTime int64) ([]*Futures_Candlestick, error) {
+	allCandlesticks := []*Futures_Candlestick{}
+
+	for {
+		if len(allCandlesticks) != 0 {
+			startTime = allCandlesticks[len(allCandlesticks)-1].CloseTime + 1
+		}
+
+		newCandlesticks, resp, err := customMethods.parent.Candlesticks(symbol, interval, Futures_Candlesticks_Params{StartTime: startTime, EndTime: endTime, Limit: 1500})
+		if err != nil {
+			return nil, err
+		}
+
+		allCandlesticks = append(allCandlesticks, newCandlesticks...)
+
+		if len(newCandlesticks) < 1500 {
+			break
+		}
+		resp.WaitUsedWeight()
+	}
+
+	return allCandlesticks, nil
+}
+
+func (customMethods *futures_Custom_Methods) Fetch_Candlesticks_float64(symbol string, interval string, startTime int64, endTime int64) ([]*FuturesWS_Candlestick_Float64, error) {
+
+	allCandlesticks, err := customMethods.Fetch_Candlesticks(symbol, interval, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedCandlesticks := make([]*FuturesWS_Candlestick_Float64, len(allCandlesticks))
+	for i := range allCandlesticks {
+		parsedCandlesticks[i], err = parseFloat_Futures_Candlestick(allCandlesticks[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return parsedCandlesticks, nil
 }
 
 /////////////////////////////////////////////////////////////////////////////////

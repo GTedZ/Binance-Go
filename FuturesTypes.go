@@ -1011,3 +1011,77 @@ type Futures_LeverageBrackets_Bracket struct {
 	// Auxiliary number for quick calculation
 	Cum float64 `json:"cum"`
 }
+
+///////////////////////
+///////////////////////
+///////////////////////
+
+func parseFloat_Futures_Candlestick(candlestick *Futures_Candlestick) (*FuturesWS_Candlestick_Float64, error) {
+
+	open, err := ParseFloat(candlestick.Open)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Open' in parseFloat_Futures_Candlestick: %s", candlestick.Open, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+	high, err := ParseFloat(candlestick.High)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.High' in parseFloat_Futures_Candlestick: %s", candlestick.High, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+	low, err := ParseFloat(candlestick.Low)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Low' in parseFloat_Futures_Candlestick: %s", candlestick.Low, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+	close, err := ParseFloat(candlestick.Close)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Close' in parseFloat_Futures_Candlestick: %s", candlestick.Close, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+
+	baseAssetVolune, err := ParseFloat(candlestick.Volume)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Volume' in parseFloat_Futures_Candlestick: %s", candlestick.Volume, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+	quoteAssetVolume, err := ParseFloat(candlestick.QuoteAssetVolume)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.QuoteAssetVolume' in parseFloat_Futures_Candlestick: %s", candlestick.QuoteAssetVolume, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+
+	takerBuyBaseAssetVolume, err := ParseFloat(candlestick.TakerBuyBaseAssetVolume)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.TakerBuyBaseAssetVolume' in parseFloat_Futures_Candlestick: %s", candlestick.TakerBuyBaseAssetVolume, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+	takerBuyQuoteAssetVolume, err := ParseFloat(candlestick.TakerBuyQuoteAssetVolume)
+	if err != nil {
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.TakerBuyQuoteAssetVolume' in parseFloat_Futures_Candlestick: %s", candlestick.TakerBuyQuoteAssetVolume, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
+	}
+
+	return &FuturesWS_Candlestick_Float64{
+		OpenTime:  candlestick.OpenTime,
+		CloseTime: candlestick.CloseTime,
+
+		Open:  open,
+		High:  high,
+		Low:   low,
+		Close: close,
+
+		Volume:                   baseAssetVolune,
+		QuoteAssetVolume:         quoteAssetVolume,
+		TakerBuyBaseAssetVolume:  takerBuyBaseAssetVolume,
+		TakerBuyQuoteAssetVolume: takerBuyQuoteAssetVolume,
+		TradeCount:               candlestick.TradeCount,
+	}, nil
+}

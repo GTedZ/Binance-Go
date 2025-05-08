@@ -1905,7 +1905,7 @@ type FuturesWS_ManagedCandlesticks_Handler struct {
 	Candlesticks_Socket *FuturesWS_Candlesticks_Socket
 	AggTrades_Socket    *FuturesWS_AggTrade_Socket
 
-	intervals []*FuturesWS_Interval
+	intervals []*Binance_Interval
 
 	disable_aggTrades_stream    bool
 	disable_candlesticks_stream bool
@@ -1914,14 +1914,6 @@ type FuturesWS_ManagedCandlesticks_Handler struct {
 		Mu      sync.Mutex
 		Symbols map[string]*FuturesWS_ManagedCandlesticks_Symbol
 	}
-}
-
-type FuturesWS_Interval struct {
-	Name       string
-	Multiplier int64
-	Rune       rune
-	Value      int64
-	Custom     bool
 }
 
 type FuturesWS_ManagedCandlesticks_Symbol struct {
@@ -1937,7 +1929,7 @@ type FuturesWS_ManagedCandlesticks_Symbol struct {
 
 type FuturesWS_ManagedCandlesticks_Interval struct {
 	symbol       *FuturesWS_ManagedCandlesticks_Symbol
-	Interval     *FuturesWS_Interval
+	Interval     *Binance_Interval
 	Candlesticks []*FuturesWS_ManagedCandlestick
 }
 
@@ -2013,49 +2005,57 @@ type FuturesWS_ManagedCandlesticks_AggTrade struct {
 
 ////
 
-func parseFloat_FuturesWS_Candlestick(candlestick *FuturesWS_Candlestick) *FuturesWS_Candlestick_Float64 {
+func parseFloat_FuturesWS_Candlestick(candlestick *FuturesWS_Candlestick) (*FuturesWS_Candlestick_Float64, error) {
 	kline := candlestick.Kline
 	open, err := ParseFloat(kline.Open)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.Open' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.Open, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.Open' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.Open, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 	high, err := ParseFloat(kline.High)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.High' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.High, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.High' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.High, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 	low, err := ParseFloat(kline.Low)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.Low' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.Low, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.Low' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.Low, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 	close, err := ParseFloat(kline.Close)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.Close' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.Close, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.Close' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.Close, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 
 	baseAssetVolune, err := ParseFloat(kline.BaseAssetVolume)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.BaseAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.BaseAssetVolume, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.BaseAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.BaseAssetVolume, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 	quoteAssetVolume, err := ParseFloat(kline.QuoteAssetVolume)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.QuoteAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.QuoteAssetVolume, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.QuoteAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.QuoteAssetVolume, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 
 	takerBuyBaseAssetVolume, err := ParseFloat(kline.TakerBuyBaseAssetVolume)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.TakerBuyBaseAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.TakerBuyBaseAssetVolume, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.TakerBuyBaseAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.TakerBuyBaseAssetVolume, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 	takerBuyQuoteAssetVolume, err := ParseFloat(kline.TakerBuyQuoteAssetVolume)
 	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'kline.TakerBuyQuoteAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick", kline.TakerBuyQuoteAssetVolume, candlestick.Symbol, kline.Interval))
-		return nil
+		errStr := fmt.Sprintf("There was an error parsing float '%s' of 'kline.TakerBuyQuoteAssetVolume' for '%s', interval '%s' in parseFloat_FuturesWS_Candlestick: %s", kline.TakerBuyQuoteAssetVolume, candlestick.Symbol, kline.Interval, err.Error())
+		LOG_WS_ERRORS(errStr)
+		return nil, err
 	}
 
 	return &FuturesWS_Candlestick_Float64{
@@ -2072,69 +2072,7 @@ func parseFloat_FuturesWS_Candlestick(candlestick *FuturesWS_Candlestick) *Futur
 		TakerBuyBaseAssetVolume:  takerBuyBaseAssetVolume,
 		TakerBuyQuoteAssetVolume: takerBuyQuoteAssetVolume,
 		TradeCount:               kline.TradeCount,
-	}
-}
-
-func parseFloat_Futures_Candlestick(candlestick *Futures_Candlestick) *FuturesWS_Candlestick_Float64 {
-
-	open, err := ParseFloat(candlestick.Open)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Open' in parseFloat_Futures_Candlestick", candlestick.Open))
-		return nil
-	}
-	high, err := ParseFloat(candlestick.High)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.High' in parseFloat_Futures_Candlestick", candlestick.High))
-		return nil
-	}
-	low, err := ParseFloat(candlestick.Low)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Low' in parseFloat_Futures_Candlestick", candlestick.Low))
-		return nil
-	}
-	close, err := ParseFloat(candlestick.Close)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.Close' in parseFloat_Futures_Candlestick", candlestick.Close))
-		return nil
-	}
-
-	baseAssetVolune, err := ParseFloat(candlestick.Volume)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.BaseAssetVolume' in parseFloat_Futures_Candlestick", candlestick.Volume))
-		return nil
-	}
-	quoteAssetVolume, err := ParseFloat(candlestick.QuoteAssetVolume)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.QuoteAssetVolume' in parseFloat_Futures_Candlestick", candlestick.QuoteAssetVolume))
-		return nil
-	}
-
-	takerBuyBaseAssetVolume, err := ParseFloat(candlestick.TakerBuyBaseAssetVolume)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.TakerBuyBaseAssetVolume' in parseFloat_Futures_Candlestick", candlestick.TakerBuyBaseAssetVolume))
-		return nil
-	}
-	takerBuyQuoteAssetVolume, err := ParseFloat(candlestick.TakerBuyQuoteAssetVolume)
-	if err != nil {
-		LOG_WS_ERRORS(fmt.Sprintf("There was an error parsing float '%s' of 'candlestick.TakerBuyQuoteAssetVolume' in parseFloat_Futures_Candlestick", candlestick.TakerBuyQuoteAssetVolume))
-		return nil
-	}
-
-	return &FuturesWS_Candlestick_Float64{
-		OpenTime:  candlestick.OpenTime,
-		CloseTime: candlestick.CloseTime,
-
-		Open:  open,
-		High:  high,
-		Low:   low,
-		Close: close,
-
-		Volume:                   baseAssetVolune,
-		QuoteAssetVolume:         quoteAssetVolume,
-		TakerBuyBaseAssetVolume:  takerBuyBaseAssetVolume,
-		TakerBuyQuoteAssetVolume: takerBuyQuoteAssetVolume,
-		TradeCount:               candlestick.TradeCount,
-	}
+	}, nil
 }
 
 func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Newest_Candlesticks() *Error {
@@ -2145,7 +2083,7 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Newest_Candlestick
 	newRawCandlesticks, _, err := interval.symbol.parent.futures_ws.binance.Futures.Candlesticks(
 		interval.symbol.Symbol,
 		interval.Interval.Name,
-		&Futures_Candlesticks_Params{
+		Futures_Candlesticks_Params{
 			Limit: 1500,
 		},
 	)
@@ -2154,8 +2092,8 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Newest_Candlestick
 	}
 
 	for i := len(newRawCandlesticks) - 1; i >= 0; i-- {
-		newCandlestick := parseFloat_Futures_Candlestick(newRawCandlesticks[i])
-		if newCandlestick == nil {
+		newCandlestick, err := parseFloat_Futures_Candlestick(newRawCandlesticks[i])
+		if err != nil {
 			continue
 		}
 		interval.handleCandlestick(newCandlestick)
@@ -2177,7 +2115,7 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Older_Candlesticks
 	newRawCandlesticks, _, err := interval.symbol.parent.futures_ws.binance.Futures.Candlesticks(
 		interval.symbol.Symbol,
 		interval.Interval.Name,
-		&Futures_Candlesticks_Params{
+		Futures_Candlesticks_Params{
 			EndTime: endTime,
 			Limit:   1500,
 		},
@@ -2187,8 +2125,8 @@ func (interval *FuturesWS_ManagedCandlesticks_Interval) Fetch_Older_Candlesticks
 	}
 
 	for i := len(newRawCandlesticks) - 1; i >= 0; i-- {
-		newCandlestick := parseFloat_Futures_Candlestick(newRawCandlesticks[i])
-		if newCandlestick == nil {
+		newCandlestick, err := parseFloat_Futures_Candlestick(newRawCandlesticks[i])
+		if err != nil {
 			continue
 		}
 		interval.handleCandlestick(newCandlestick)
@@ -2201,28 +2139,28 @@ func (managedCandlestick_symbol *FuturesWS_ManagedCandlesticks_Symbol) handleCan
 	managedCandlestick_symbol.Intervals.Mu.Lock()
 	defer managedCandlestick_symbol.Intervals.Mu.Unlock()
 
-	intervalValue, _, _, _, parseErr := GetIntervalFromString(candlestick.Kline.Interval)
+	interval, _, parseErr := GetIntervalFromString(candlestick.Kline.Interval)
 	if parseErr != nil {
 		return
 	}
 
-	newCandlestick := parseFloat_FuturesWS_Candlestick(candlestick)
-	if newCandlestick == nil {
+	newCandlestick, err := parseFloat_FuturesWS_Candlestick(candlestick)
+	if err == nil {
 		return
 	}
 
-	for _, interval := range managedCandlestick_symbol.Intervals.Map {
+	for _, storedInterval := range managedCandlestick_symbol.Intervals.Map {
 		// # The following makes sure of two things
 		// 1- A candlestick of a higher interval doesn't update candlesticks of a lower interval (like receiving a 3m candle and updating a 1m candle, not ideal for tradecounts and such)
 		// 2- A candlestick of the same interval rune (like 'm' for minutes) can only update similar candlesticks with the same rune IF it divides the interval (a candle of 1m can update 3m candles, but a 3m interval cannot update 5m candles)
 		//
 		// I am aware that since we are doing this, NONE of the Volumes will be updated accurately, lots of overwriting of bad data, but they will be accurate with the aggTrades received, thus the use of math.Max(<candleVolume>, <calculated_candleVolume>) is required
 		// But the point of this is to have as much accuracy as possible, with as little data consumption as possible
-		if interval.Interval.Value < intervalValue { //  || interval.Interval.Value%intervalValue != 0
+		if storedInterval.Interval.Value < interval.Value { //  || interval.Interval.Value%intervalValue != 0
 			continue
 		}
 
-		interval.handleCandlestick(newCandlestick)
+		storedInterval.handleCandlestick(newCandlestick)
 	}
 
 }
@@ -2612,28 +2550,65 @@ func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage
 		customIntervals = opt_params.CustomIntervals
 	}
 
-	handler.intervals = append(handler.intervals,
-		&FuturesWS_Interval{Name: "1m", Multiplier: 1, Rune: 'm', Value: 1 * MINUTE},
-		&FuturesWS_Interval{Name: "3m", Multiplier: 3, Rune: 'm', Value: 3 * MINUTE},
-		&FuturesWS_Interval{Name: "5m", Multiplier: 5, Rune: 'm', Value: 5 * MINUTE},
-		&FuturesWS_Interval{Name: "15m", Multiplier: 15, Rune: 'm', Value: 15 * MINUTE},
-		&FuturesWS_Interval{Name: "30m", Multiplier: 30, Rune: 'm', Value: 30 * MINUTE},
-		&FuturesWS_Interval{Name: "1h", Multiplier: 1, Rune: 'h', Value: 1 * HOUR},
-		&FuturesWS_Interval{Name: "2h", Multiplier: 2, Rune: 'h', Value: 2 * HOUR},
-		&FuturesWS_Interval{Name: "4h", Multiplier: 4, Rune: 'h', Value: 4 * HOUR},
-		&FuturesWS_Interval{Name: "6h", Multiplier: 6, Rune: 'h', Value: 6 * HOUR},
-		&FuturesWS_Interval{Name: "8h", Multiplier: 8, Rune: 'h', Value: 8 * HOUR},
-		&FuturesWS_Interval{Name: "12h", Multiplier: 12, Rune: 'h', Value: 12 * HOUR},
-		&FuturesWS_Interval{Name: "1d", Multiplier: 1, Rune: 'd', Value: 1 * DAY},
-		&FuturesWS_Interval{Name: "3d", Multiplier: 3, Rune: 'd', Value: 3 * DAY},
-		&FuturesWS_Interval{Name: "1w", Multiplier: 1, Rune: 'w', Value: 0},
-		&FuturesWS_Interval{Name: "1M", Multiplier: 1, Rune: 'M', Value: 0},
+	intervals := []string{
+		FUTURES_Constants.ChartIntervals.MIN,
+		FUTURES_Constants.ChartIntervals.MINS_3,
+		FUTURES_Constants.ChartIntervals.MINS_5,
+		FUTURES_Constants.ChartIntervals.MINS_15,
+		FUTURES_Constants.ChartIntervals.MINS_30,
 
-		&FuturesWS_Interval{Name: "1s", Multiplier: 1, Rune: 's', Value: 1 * SECOND, Custom: true},
-		&FuturesWS_Interval{Name: "15s", Multiplier: 15, Rune: 's', Value: 15 * SECOND, Custom: true},
-		&FuturesWS_Interval{Name: "30s", Multiplier: 30, Rune: 's', Value: 30 * SECOND, Custom: true},
-		&FuturesWS_Interval{Name: "1Y", Multiplier: 1, Rune: 'Y', Value: 0, Custom: true},
-	)
+		FUTURES_Constants.ChartIntervals.HOUR,
+		FUTURES_Constants.ChartIntervals.HOURS_2,
+		FUTURES_Constants.ChartIntervals.HOURS_4,
+		FUTURES_Constants.ChartIntervals.HOURS_6,
+		FUTURES_Constants.ChartIntervals.HOURS_8,
+		FUTURES_Constants.ChartIntervals.HOURS_12,
+
+		FUTURES_Constants.ChartIntervals.DAY,
+		FUTURES_Constants.ChartIntervals.DAYS_3,
+		FUTURES_Constants.ChartIntervals.WEEK,
+		FUTURES_Constants.ChartIntervals.MONTH,
+	}
+
+	for _, interval := range intervals {
+		found := false
+		for _, presentInterval := range handler.intervals {
+			if presentInterval.Name == interval {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		}
+		interval, _, parseErr := GetIntervalFromString(interval)
+		if parseErr != nil {
+			return handler, LocalError(PARSING_ERR, fmt.Sprintf("Failed to parse custom interval '%s': %s", interval.Name, parseErr.Error()))
+		}
+		interval.Custom = false
+		handler.intervals = append(handler.intervals, interval)
+	}
+
+	forcedCustomIntervals := []string{"1s", "15s", "30s", "1Y"}
+	for _, forcedCustomInterval := range forcedCustomIntervals {
+		found := false
+		for _, presentInterval := range handler.intervals {
+			if presentInterval.Name == forcedCustomInterval {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		}
+		interval, _, parseErr := GetIntervalFromString(forcedCustomInterval)
+		if parseErr != nil {
+			return handler, LocalError(PARSING_ERR, fmt.Sprintf("Failed to parse custom interval '%s': %s", forcedCustomInterval, parseErr.Error()))
+		}
+		interval.Custom = true
+		handler.intervals = append(handler.intervals, interval)
+	}
+
 	for _, customInterval := range customIntervals {
 		found := false
 		for _, interval := range handler.intervals {
@@ -2645,11 +2620,12 @@ func (futures_ws *Futures_Websockets) Managed_CustomCandlesticks(publicOnMessage
 		if found {
 			continue
 		}
-		intervalValue, multiplier, intervalRune, _, parseErr := GetIntervalFromString(customInterval)
+		interval, _, parseErr := GetIntervalFromString(customInterval)
 		if parseErr != nil {
 			return handler, LocalError(PARSING_ERR, fmt.Sprintf("Failed to parse custom interval '%s': %s", customInterval, parseErr.Error()))
 		}
-		handler.intervals = append(handler.intervals, &FuturesWS_Interval{Name: customInterval, Multiplier: multiplier, Rune: intervalRune, Value: intervalValue, Custom: true})
+		interval.Custom = true
+		handler.intervals = append(handler.intervals, interval)
 	}
 
 	handler.Candlesticks.Symbols = make(map[string]*FuturesWS_ManagedCandlesticks_Symbol)

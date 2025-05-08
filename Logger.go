@@ -1,6 +1,53 @@
 package Binance
 
-import "fmt"
+import (
+	"fmt"
+
+	gologs "github.com/GTedZ/Go-Logs"
+)
+
+type Logger struct {
+	logger gologs.GoLogger
+
+	LogLevels struct {
+		DEBUG int
+		INFO  int
+		WARN  int
+		ERROR int
+	}
+
+	PrintWSMessages  bool
+	PrintWSResponses bool
+}
+
+func (logger *Logger) init() {
+	logger.LogLevels = struct {
+		DEBUG int
+		INFO  int
+		WARN  int
+		ERROR int
+	}{
+		DEBUG: gologs.DEBUG_LVL,
+		INFO:  gologs.INFO_LVL,
+		WARN:  gologs.WARN_LVL,
+		ERROR: gologs.ERROR_LVL,
+	}
+
+	logger.logger.PrintLogsLevel = -1
+	logger.logger.LogLevel = -1
+}
+
+func (logger *Logger) SetPrintLogsLevel(level int) {
+	logger.logger.PrintLogsLevel = level
+}
+
+func (logger *Logger) SetLogLevel(level int) {
+	logger.logger.LogLevel = level
+}
+
+func (logger *Logger) SetLogFile(filePath string) {
+	logger.logger.LogFile = filePath
+}
 
 func LOG_HTTP_QUERIES(a ...any) {
 	if DevOptions.PRINT_HTTP_QUERIES {

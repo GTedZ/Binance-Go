@@ -3,6 +3,7 @@ package Binance
 type Binance struct {
 	configs BinanceConfig
 	Opts    BinanceOptions
+	Logger  Logger
 
 	API APIKEYS
 
@@ -15,6 +16,7 @@ func CreateReadClient() *Binance {
 
 	binance.configs.init()
 	binance.Opts.init()
+	binance.Logger.init()
 
 	binance.Spot.init(&binance)
 	binance.Futures.init(&binance)

@@ -126,6 +126,78 @@ func (resp *Response) GetUsedWeight(interval string) (int64, *Error) {
 	return value, nil
 }
 
+type WaitUsedWeight_Params struct {
+	// By default, '1m' is used, which is the only interval limit currently used.
+	Interval string
+
+	// Currently, the limit on binance's side is 2400, for safety, the local limit is 2350, but you can use your own
+	MaxUsedWeight int
+
+	// If aware of the next request's weight, you can pass this so that we can precompute if the next request exceeds the maxUsedWeight used.
+	NextRequestWeight int
+}
+
+// # Extracts the used weight and the request time
+//
+// If the used weight EXCEEDS the usual limit (or maxUsedWeight if passed)
+//
+// # It will wait until the next reset time before returning from the function call
+//
+// In short, after each request, call this function, if the returned error is nil, you're free to continue with your next request
+func (resp *Response) WaitUsedWeight(opt_params ...WaitUsedWeight_Params) (hasWaited bool, err *Error) {
+	intervalStr := "1m"
+	maxWeight := 2350
+	nextRequestWeight := 0
+
+	if len(opt_params) != 0 {
+		params := opt_params[0]
+
+		if IsDifferentFromDefault(params.Interval) {
+			intervalStr = params.Interval
+		}
+		if IsDifferentFromDefault(params.MaxUsedWeight) {
+			maxWeight = params.MaxUsedWeight
+		}
+		if IsDifferentFromDefault(params.NextRequestWeight) {
+			nextRequestWeight = params.NextRequestWeight
+		}
+	}
+
+	interval, exists, err := GetIntervalFromString(intervalStr)
+	if err != nil {
+		return false, err
+	}
+
+	if !exists {
+		return false, LocalError(INVALID_VALUE_ERR, fmt.Sprintf("Interval letter '%v' doesn't exist in binance's accepted values", interval.Rune))
+	}
+
+	var usedWeight int64
+
+	usedWeight, err = resp.GetUsedWeight(interval.Name)
+	if err != nil {
+		return hasWaited, err
+	}
+
+	if usedWeight+int64(nextRequestWeight) > int64(maxWeight) {
+		hasWaited = true
+		total_intervalValue := interval.Value
+
+		requestTime, err := resp.GetRequestTime()
+		if err != nil {
+			return false, err
+		}
+
+		unixMilli := requestTime.UnixMilli()
+
+		millis_toWait := unixMilli - (unixMilli % total_intervalValue)
+
+		time.Sleep(time.Duration(millis_toWait) * time.Millisecond)
+	}
+
+	return hasWaited, nil
+}
+
 func (resp *Response) GetRequestTime() (time.Time, *Error) {
 	key := "Date"
 
