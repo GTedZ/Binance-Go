@@ -808,7 +808,7 @@ func (futures *Futures) Ticker24h(symbol ...string) ([]*Futures_24hTicker, *Resp
 		return nil, resp, err
 	}
 
-	if len(symbol) == 0 {
+	if len(symbol) == 1 {
 		var ticker Futures_24hTicker
 		unmarshallErr := json.Unmarshal(resp.Body, &ticker)
 		if unmarshallErr != nil {
@@ -845,7 +845,7 @@ func (futures *Futures) PriceTicker_v1(symbol ...string) ([]*Futures_PriceTicker
 		return nil, resp, err
 	}
 
-	if len(symbol) == 0 {
+	if len(symbol) == 1 {
 		var priceTicker Futures_PriceTicker
 		unmarshallErr := json.Unmarshal(resp.Body, &priceTicker)
 		if unmarshallErr != nil {
@@ -883,7 +883,7 @@ func (futures *Futures) PriceTicker(symbol ...string) ([]*Futures_PriceTicker, *
 		return nil, resp, err
 	}
 
-	if len(symbol) == 0 {
+	if len(symbol) == 1 {
 		var priceTicker Futures_PriceTicker
 		unmarshallErr := json.Unmarshal(resp.Body, &priceTicker)
 		if unmarshallErr != nil {
@@ -923,7 +923,7 @@ func (futures *Futures) BookTicker(symbol ...string) ([]*Futures_BookTicker, *Re
 		return nil, resp, err
 	}
 
-	if len(symbol) == 0 {
+	if len(symbol) == 1 {
 		var bookTicker Futures_BookTicker
 		unmarshallErr := json.Unmarshal(resp.Body, &bookTicker)
 		if unmarshallErr != nil {
