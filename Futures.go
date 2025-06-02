@@ -1280,6 +1280,11 @@ func (futures *Futures) MarketSell(symbol string, quantity string, opt_params ..
 
 // }
 
+// Margin Types:
+//
+// - "ISOLATED"
+//
+// - "CROSSED"
 func (futures *Futures) ChangeMarginType(symbol string, marginType string, recvWindow ...int64) (*Futures_ChangeMarginType_Response, *Response, *Error) {
 	opts := make(map[string]interface{})
 
@@ -1494,7 +1499,8 @@ func (futures *Futures) LeverageBrackets(symbol ...string) ([]*Futures_LeverageB
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
 
-func (customMethods *futures_Custom_Methods) Fetch_Candlesticks(symbol string, interval string, startTime int64, endTime int64) ([]*Futures_Candlestick, error) {
+// This fetches more than the simple limit of 1500 candlesticks
+func (customMethods *futures_Custom_Methods) Batch_Candlesticks(symbol string, interval string, startTime int64, endTime int64) ([]*Futures_Candlestick, error) {
 	allCandlesticks := []*Futures_Candlestick{}
 
 	for {
@@ -1507,6 +1513,8 @@ func (customMethods *futures_Custom_Methods) Fetch_Candlesticks(symbol string, i
 			return nil, err
 		}
 
+		resp.WaitUsedWeight(WaitUsedWeight_Params{Interval: "1m"})
+
 		allCandlesticks = append(allCandlesticks, newCandlesticks...)
 
 		if len(newCandlesticks) < 1500 {
@@ -1518,9 +1526,9 @@ func (customMethods *futures_Custom_Methods) Fetch_Candlesticks(symbol string, i
 	return allCandlesticks, nil
 }
 
-func (customMethods *futures_Custom_Methods) Fetch_Candlesticks_float64(symbol string, interval string, startTime int64, endTime int64) ([]*FuturesWS_Candlestick_Float64, error) {
+func (customMethods *futures_Custom_Methods) Batch_Candlesticks_float64(symbol string, interval string, startTime int64, endTime int64) ([]*FuturesWS_Candlestick_Float64, error) {
 
-	allCandlesticks, err := customMethods.Fetch_Candlesticks(symbol, interval, startTime, endTime)
+	allCandlesticks, err := customMethods.Batch_Candlesticks(symbol, interval, startTime, endTime)
 	if err != nil {
 		return nil, err
 	}

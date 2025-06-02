@@ -502,7 +502,7 @@ type FuturesWS_ContinuousCandlestick_Params struct {
 func (*FuturesWS_ContinuousCandlestick_Socket) CreateStreamName(params ...FuturesWS_ContinuousCandlestick_Params) []string {
 	streamNames := make([]string, len(params))
 	for i := range params {
-		streamNames[i] = strings.ToLower(params[i].Symbol) + "@kline_" + params[i].Interval
+		streamNames[i] = strings.ToLower(params[i].Symbol) + "_" + strings.ToLower(params[i].ContractType) + "@continuousKline_" + params[i].Interval
 	}
 	return streamNames
 }
@@ -517,6 +517,9 @@ func (socket *FuturesWS_ContinuousCandlestick_Socket) Unsubscribe(params ...Futu
 	return socket.Handler.Unsubscribe(streamNames...)
 }
 
+// This is the only endpoint where binance unofficially supports the "1s" interval
+//
+// So using it should be okay.
 func (futures_ws *Futures_Websockets) ContinuousCandlesticks(publicOnMessage func(candlestick *FuturesWS_ContinuousCandlestick), params ...FuturesWS_ContinuousCandlestick_Params) (*FuturesWS_ContinuousCandlestick_Socket, *Error) {
 	var newSocket FuturesWS_ContinuousCandlestick_Socket
 
